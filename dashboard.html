@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LIVES · Orden y Limpieza — Dashboard en vivo</title>
+<title>LIVES · Check List de Orden y Limpieza — Semana en vivo</title>
 <link rel="icon" href="data:,">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
@@ -21,83 +21,130 @@ body{margin:0;background:var(--warm-light);color:#333;font-family:Calibri,Arial,
 .hsub{color:#F1F6F4;font-size:12px;}
 .header .live{margin-left:auto;color:#F1F6F4;font-size:11.5px;text-align:right;}
 .header .live b{color:var(--emer);}
-.wrap{max-width:1280px;margin:0 auto;padding:20px 24px 40px;}
-.bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--warm);}
-.bar .lb{font-size:11px;font-weight:700;color:var(--stone);text-transform:uppercase;letter-spacing:.4px;margin-right:-8px;}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--emer);margin-right:5px;animation:lat 2s infinite;}
+@keyframes lat{0%,100%{opacity:1}50%{opacity:.25}}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 24px 40px;}
+.bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--warm);}
+.bar .lb{font-size:11px;font-weight:700;color:var(--stone);text-transform:uppercase;letter-spacing:.4px;margin-right:-6px;}
 .bar select{font-family:inherit;font-size:14px;font-weight:700;color:var(--sage);border:1.5px solid var(--sage);border-radius:6px;padding:6px 12px;background:#fff;cursor:pointer;}
 .bar .btn{background:#fff;border:1px solid var(--warm);color:var(--sage);font-family:inherit;font-weight:700;font-size:12.5px;padding:7px 14px;border-radius:6px;cursor:pointer;}
 .bar .btn:hover{border-color:var(--sage);}
 .bar .btn.pri{background:var(--sage);color:#fff;border-color:var(--sage);}
-.modesel{display:inline-flex;border:1.5px solid var(--sage);border-radius:6px;overflow:hidden;}
-.modesel .mbtn{background:#fff;color:var(--sage);border:none;padding:6px 14px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;}
-.modesel .mbtn.active{background:var(--sage);color:#fff;}
-.ybtns{display:inline-flex;gap:6px;flex-wrap:wrap;}
-.ybtn{background:#fff;color:var(--sage);border:1.5px solid var(--warm);border-radius:6px;padding:6px 13px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;}
-.ybtn.active{background:var(--sage);color:#fff;border-color:var(--sage);}
+.bar .btn.pri:hover{background:var(--sage-dark);}
+.bar .nav{padding:6px 11px;font-size:15px;line-height:1;}
+.bar .sp{margin-left:auto;}
+
+/* ---- Hoja del reporte ---- */
+.hoja{background:#fff;border:1px solid var(--warm);border-radius:10px;padding:22px 26px;margin-bottom:18px;}
+.hoja .hh{display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;border-bottom:2px solid var(--petrol);padding-bottom:14px;margin-bottom:16px;}
+.hoja .ht{font-size:19px;font-weight:700;color:var(--petrol);letter-spacing:.2px;}
+.hoja .hst{font-size:12.5px;color:var(--stone);margin-top:3px;}
+.hoja .meta{margin-left:auto;text-align:right;font-size:12.5px;color:#333;}
+.hoja .meta .mrow{margin-bottom:3px;}
+.hoja .meta b{color:var(--sage-dark);text-transform:uppercase;letter-spacing:.3px;}
+.leyenda{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--stone);margin-bottom:14px;align-items:center;}
+.leyenda i{display:inline-flex;align-items:center;gap:5px;font-style:normal;}
+.lg{width:18px;height:18px;border-radius:4px;display:inline-block;font-size:11px;font-weight:700;text-align:center;line-height:18px;}
+
+/* ---- Tabla semanal ---- */
+table.wk{width:100%;border-collapse:collapse;font-size:12.5px;}
+table.wk th{background:var(--petrol);color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.4px;padding:9px 8px;text-align:center;font-weight:700;}
+table.wk th.iz{text-align:left;}
+table.wk th.hoy{background:var(--sage);}
+table.wk th small{display:block;font-size:9.5px;opacity:.8;font-weight:400;letter-spacing:0;}
+table.wk td{padding:7px 8px;border-bottom:1px solid var(--warm-light);vertical-align:middle;}
+table.wk td.num{width:34px;text-align:center;color:var(--stone);font-weight:700;font-size:11.5px;}
+table.wk td.itm{font-size:12px;line-height:1.35;}
+table.wk td.d{width:78px;text-align:center;padding:5px 4px;}
+table.wk td.pc{width:62px;text-align:center;font-weight:700;font-size:12.5px;}
+tr.secrow td{background:var(--warm-light);font-weight:700;color:var(--sage-dark);font-size:12.5px;text-transform:uppercase;letter-spacing:.5px;padding:9px 8px;border-bottom:2px solid var(--warm);}
+tr.secrow td .cnt{float:right;font-weight:700;color:var(--stone);text-transform:none;letter-spacing:0;font-size:11.5px;}
+.c{display:inline-block;width:100%;max-width:56px;border-radius:5px;padding:5px 0;font-weight:700;font-size:12px;line-height:1.1;}
+.c.ok{background:#E3F2EC;color:var(--sage-dark);border:1px solid #BFE3D6;}
+.c.x{background:#FBE4E4;color:var(--rose);border:1px solid #F3C0C0;}
+.c.na{background:#EEF2F3;color:var(--slate);border:1px solid #DCE3E6;font-size:10.5px;}
+.c.falta{background:#FDF3E2;color:var(--taupe);border:1px dashed #EBCF9E;font-size:10.5px;}
+.c.esp{background:transparent;color:#C7D3CF;border:1px dashed var(--warm);font-size:11px;}
+td.d.hoycol{background:#F6FBF9;}
+
+/* ---- KPIs ---- */
 .kpis{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
-.kpi{background:#fff;border:1px solid var(--warm);border-radius:8px;padding:16px 18px;flex:1;min-width:150px;}
+.kpi{background:#fff;border:1px solid var(--warm);border-radius:8px;padding:15px 17px;flex:1;min-width:150px;}
 .kpi .v{font-size:28px;font-weight:700;color:var(--sage);line-height:1.1;}
 .kpi .l{font-size:12.5px;color:#333;margin-top:4px;font-weight:600;}
 .kpi .s{font-size:11px;color:var(--stone);margin-top:2px;}
 .kpi.primary{border:2px solid var(--sage);}.kpi.primary .v{font-size:34px;}
 .kpi.bad .v{color:var(--rose);}
-.kpanel{background:#fff;border:1px solid var(--warm);border-radius:8px;padding:16px 18px;}
-.kpanel .kh{font-size:14px;font-weight:700;color:#fff;background:var(--sage);margin:-16px -18px 14px;padding:9px 18px;border-radius:8px 8px 0 0;}
-.kpanel.tall .kh{background:var(--slate);}
-.kcells{display:flex;gap:6px;flex-wrap:wrap;}
-.kcell{flex:1;min-width:96px;text-align:center;padding:6px 4px;}
-.kcell .v{font-size:26px;font-weight:700;color:var(--sage);line-height:1.05;}
-.kpanel.tall .kcell .v{color:var(--slate);}
-.kcell .l{font-size:11px;color:var(--stone);margin-top:2px;}
-.kcell .v.re{color:var(--rose);}
-.donutwrap{display:flex;align-items:center;gap:10px;margin-top:8px;}
-.donutwrap .dc{position:relative;width:96px;height:96px;flex:none;}
-.donutwrap .dleg{font-size:11.5px;color:var(--stone);}
-.donutwrap .dleg b{font-size:20px;color:var(--rose);display:block;line-height:1.1;}
-.panel{background:#fff;border:1px solid var(--warm);border-radius:8px;padding:16px 18px;margin-bottom:18px;}
+.kpi.warn .v{color:var(--tan);}
+.pbar{height:6px;background:var(--warm-light);border-radius:4px;overflow:hidden;margin-top:8px;}
+.pbar i{display:block;height:100%;background:var(--sage);width:0;transition:width .3s;}
+
+/* ---- No conformidades ---- */
+.ncbox{background:#fff;border:1px solid var(--warm);border-radius:10px;padding:18px 22px;margin-bottom:18px;}
+.ncbox .pt{font-size:15px;font-weight:700;color:#333;margin-bottom:2px;}
+.ncbox .ph{font-size:11.5px;color:var(--stone);margin-bottom:12px;}
+table.nc{width:100%;border-collapse:collapse;font-size:12px;}
+table.nc th{background:var(--warm-light);color:var(--stone);text-transform:uppercase;font-size:10.5px;letter-spacing:.4px;text-align:left;padding:8px 10px;border-bottom:2px solid var(--warm);}
+table.nc td{padding:8px 10px;border-bottom:1px solid var(--warm-light);vertical-align:top;}
+table.nc td.dia{white-space:nowrap;font-weight:700;color:var(--rose);}
+.sinnc{text-align:center;color:var(--sage-dark);padding:22px;font-weight:700;}
+.note{background:#fff;border:1px solid var(--warm);border-left:4px solid var(--tan);border-radius:6px;padding:10px 14px;font-size:11.5px;color:var(--stone);margin-bottom:18px;line-height:1.5;}
+.err{display:none;background:#FBE9E9;border:1px solid var(--rose);border-radius:8px;padding:12px 16px;color:#DC2626;font-size:13px;margin-bottom:16px;}
+.err.show{display:block;}
+.hide{display:none!important;}
+
+/* ---- Modal de estadísticas ---- */
+.modal{position:fixed;inset:0;background:rgba(14,59,54,.55);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:24px;overflow:auto;}
+.modal.show{display:flex;}
+.mbox{background:var(--warm-light);border-radius:12px;width:100%;max-width:1100px;box-shadow:0 10px 40px rgba(0,0,0,.25);overflow:hidden;}
+.mhead{background:var(--petrol);border-bottom:3px solid var(--emer);padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.mhead .mt{color:#fff;font-size:16px;font-weight:700;}
+.mhead .ms{color:#F1F6F4;font-size:11.5px;}
+.mhead .cerrar{margin-left:auto;background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;font-family:inherit;font-size:13px;font-weight:700;border-radius:6px;padding:6px 14px;cursor:pointer;}
+.mhead .cerrar:hover{background:rgba(255,255,255,.12);}
+.tabs{display:flex;gap:0;background:#fff;border-bottom:1px solid var(--warm);padding:0 22px;flex-wrap:wrap;}
+.tab{background:transparent;border:none;border-bottom:3px solid transparent;color:var(--stone);font-family:inherit;font-size:13.5px;font-weight:700;padding:12px 16px;cursor:pointer;}
+.tab.active{color:var(--sage-dark);border-bottom-color:var(--sage);}
+.mbody{padding:20px 22px 26px;max-height:74vh;overflow:auto;}
+.panel{background:#fff;border:1px solid var(--warm);border-radius:8px;padding:16px 18px;margin-bottom:16px;}
 .panel .pt{font-size:15px;font-weight:700;color:#333;}
 .panel .ph{font-size:11.5px;color:var(--stone);margin-top:2px;margin-bottom:10px;}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
-@media(max-width:860px){.grid2{grid-template-columns:1fr;}}
 .cwrap{position:relative;width:100%;}
-.sectitle{font-size:17px;font-weight:700;color:var(--sage-dark);margin:26px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--warm);}
-.note{background:#fff;border:1px solid var(--warm);border-left:4px solid var(--tan);border-radius:6px;padding:10px 14px;font-size:11.5px;color:var(--stone);margin-bottom:18px;line-height:1.5;}
-.icards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:860px){.grid2{grid-template-columns:1fr;}}
+.icards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px;}
 @media(max-width:860px){.icards{grid-template-columns:1fr;}}
 .icard{background:#fff;border:1px solid var(--warm);border-radius:8px;padding:14px 16px;border-top:3px solid var(--sage);}
 .icard.bad{border-top-color:var(--rose);}
 .icard.up{border-top-color:var(--tan);}
 .icard .il{font-size:11.5px;color:var(--stone);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
-.icard .iv{font-size:22px;font-weight:700;color:#333;margin:4px 0 2px;line-height:1.15;}
+.icard .iv{font-size:20px;font-weight:700;color:#333;margin:4px 0 2px;line-height:1.2;}
 .icard .is{font-size:12px;color:var(--stone);}
-table{width:100%;border-collapse:collapse;font-size:12px;}
-th{background:var(--warm-light);color:var(--stone);text-transform:uppercase;font-size:10.5px;letter-spacing:.4px;text-align:left;padding:8px 10px;border-bottom:2px solid var(--warm);white-space:nowrap;}
-td{padding:8px 10px;border-bottom:1px solid var(--warm-light);vertical-align:top;}
-tr:hover td{background:#FAFCFB;}
-td.nc{color:var(--rose);font-weight:700;}
-.tscroll{max-height:520px;overflow:auto;}
-.err{display:none;background:#FBE9E9;border:1px solid var(--rose);border-radius:8px;padding:12px 16px;color:#DC2626;font-size:13px;margin-bottom:16px;}
-.err.show{display:block;}
-.empty{background:#fff;border:1px dashed var(--warm);border-radius:10px;padding:40px 20px;text-align:center;color:var(--stone);font-size:14px;}
-.hide{display:none!important;}
-.printhead{display:none;}
+table.rs{width:100%;border-collapse:collapse;font-size:12px;}
+table.rs th{background:var(--warm-light);color:var(--stone);text-transform:uppercase;font-size:10.5px;letter-spacing:.4px;text-align:left;padding:8px 10px;border-bottom:2px solid var(--warm);}
+table.rs td{padding:7px 10px;border-bottom:1px solid var(--warm-light);}
+
+/* ---- Impresión / PDF ---- */
 @media print{
-  @page{size:A4 landscape;margin:10mm;}
+  @page{size:A4 portrait;margin:9mm;}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
-  body{background:#fff!important;}
-  .no-print,.bar{display:none!important;}
-  .header{padding:0 8px;min-height:60px;}
+  body{background:#fff!important;font-size:11px;}
+  .bar,.no-print,.modal{display:none!important;}
+  .wrap{max-width:none;padding:0;}
+  .header{padding:0 6px;min-height:56px;}
   .header .live{display:none;}
-  .printhead{display:block;margin:14px 0 16px;padding-bottom:10px;border-bottom:2px solid var(--warm);}
-  .printhead .ph1{font-size:19px;font-weight:700;color:var(--petrol);}
-  .printhead .ph2{font-size:14px;font-weight:700;color:var(--sage-dark);margin-top:3px;}
-  .printhead .ph3{font-size:11px;color:var(--stone);margin-top:3px;}
-  body.print-dash .tscroll{max-height:none!important;overflow:visible!important;}
-  body.print-dash tr:hover td{background:transparent!important;}
-  body.print-dash .panel,body.print-dash .kpi,body.print-dash table tr,body.print-dash .cwrap,body.print-dash .kpanel,body.print-dash .icard{break-inside:avoid;page-break-inside:avoid;}
-  body.print-dash thead{display:table-header-group;}
-  body.print-dash .sectitle{break-after:avoid;page-break-after:avoid;margin-top:6px;}
-  body.print-dash canvas{max-width:100%!important;height:auto!important;}
+  .header img{height:34px;}
+  .hoja,.ncbox{border:none;border-radius:0;padding:10px 0;margin-bottom:10px;}
+  .kpi{padding:9px 12px;}
+  .kpi .v{font-size:20px;}.kpi.primary .v{font-size:24px;}
+  table.wk{font-size:9.5px;}
+  table.wk td{padding:4px 5px;}
+  table.wk td.itm{font-size:9.5px;}
+  table.wk th{padding:6px 5px;font-size:9px;}
+  .c{font-size:9.5px;padding:3px 0;}
+  table.wk tr,.kpi,.ncbox,tr.secrow{break-inside:avoid;page-break-inside:avoid;}
+  thead{display:table-header-group;}
+  tr.secrow{break-after:avoid;page-break-after:avoid;}
 }
 </style>
 </head>
@@ -107,124 +154,138 @@ td.nc{color:var(--rose);font-weight:700;}
   <img src="data:image/png;base64,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" alt="LIVES">
   <div class="divider"></div>
   <div>
-    <div class="htitle">ORDEN Y LIMPIEZA — DASHBOARD EN VIVO</div>
-    <div class="hsub" id="hsub">Check list de fábrica · Chorrillos y Barranco</div>
+    <div class="htitle">CHECK LIST DE ORDEN Y LIMPIEZA</div>
+    <div class="hsub" id="hsub">Seguimiento semanal en vivo · Chorrillos y Barranco</div>
   </div>
-  <div class="live">Actualizado <b id="hora">—</b><br><span id="nfilas">—</span></div>
+  <div class="live" id="live"><span class="dot"></span>En vivo · <b id="hora">—</b><br><span id="nfilas">—</span></div>
 </div>
 
 <div class="wrap">
   <div id="err" class="err"></div>
   <div id="selloExp" class="note hide" style="border-left-color:var(--slate)"></div>
 
-  <!-- Cabecera que SOLO se ve en el PDF impreso -->
-  <div class="printhead" id="printhead">
-    <div class="ph1">Check list de orden y limpieza</div>
-    <div class="ph2" id="phPeriodo">—</div>
-    <div class="ph3" id="phGen">—</div>
-  </div>
-
-  <!-- FILTROS -->
   <div class="bar no-print">
-    <span class="lb">Año</span>
-    <span class="ybtns" id="yearBtns"></span>
-    <span class="lb">Ver por</span>
-    <span class="modesel" id="granSel">
-      <button class="mbtn" data-g="dia">Día</button>
-      <button class="mbtn active" data-g="semana">Semana</button>
-      <button class="mbtn" data-g="mes">Mes</button>
-      <button class="mbtn" data-g="anio">Año</button>
-    </span>
-    <span class="lb">Período</span>
-    <select id="selPeriodo"></select>
-    <span class="lb">Sede</span>
-    <select id="selSede"></select>
-    <button class="btn" id="btnRef">↻ Actualizar</button>
-    <button class="btn pri" id="btnExp">⬇ Exportar dashboard</button>
+    <span class="lb">Fábrica</span>
+    <select id="selFab"></select>
+    <span class="lb">Semana</span>
+    <button class="btn nav" id="btnPrev" title="Semana anterior">‹</button>
+    <select id="selSem"></select>
+    <button class="btn nav" id="btnNext" title="Semana siguiente">›</button>
+    <span class="sp"></span>
+    <button class="btn pri" id="btnStats">📊 Estadísticas acumuladas</button>
     <button class="btn" id="btnPdf">🖨 PDF</button>
+    <button class="btn" id="btnExp">⬇ Exportar</button>
+    <button class="btn" id="btnRef">↻</button>
   </div>
 
-  <div id="vacio" class="empty hide">
-    Todavía no hay check lists enviados. Apenas se envíe el primero desde el celular, aparece aquí.
-  </div>
+  <div class="kpis" id="kpis"></div>
 
-  <!-- VISTA PRINCIPAL -->
-  <div id="mainView">
-    <div class="kpis" id="kpis"></div>
-    <div class="note" id="notaMetodo"></div>
-    <div class="icards" id="icards"></div>
-
-    <div class="sectitle">Comparativo por sede</div>
-    <div class="grid2" id="sedes"></div>
-
-    <div class="sectitle" id="ttlTend">Tendencia</div>
-    <div class="panel">
-      <div class="pt" id="ptTend">Cumplimiento por período</div>
-      <div class="ph" id="phTend">% de ítems OK sobre ítems evaluados (OK + X). Los N/A no cuentan.</div>
-      <div class="cwrap" style="height:320px"><canvas id="chTend"></canvas></div>
-    </div>
-
-    <div class="sectitle">Dónde está el problema</div>
-    <div class="grid2">
-      <div class="panel" style="margin-bottom:0">
-        <div class="pt">Cumplimiento por sección</div>
-        <div class="ph">Promedio ponderado del período seleccionado.</div>
-        <div class="cwrap" style="height:330px"><canvas id="chSec"></canvas></div>
+  <div class="hoja" id="hoja">
+    <div class="hh">
+      <div>
+        <div class="ht">SE DEBE MANTENER EL ORDEN Y LIMPIEZA EN TODAS LAS ÁREAS</div>
+        <div class="hst">Marcar cada casilla con OK / X según corresponda · OK = se hizo · X = no se hizo</div>
       </div>
-      <div class="panel" style="margin-bottom:0">
-        <div class="pt">Ítems con más no conformidades</div>
-        <div class="ph">Veces que el ítem se marcó X en el período (top 10).</div>
-        <div class="cwrap" style="height:330px"><canvas id="chTop"></canvas></div>
+      <div class="meta">
+        <div class="mrow"><b>Semana:</b> <span id="mSem">—</span></div>
+        <div class="mrow"><b>Fábrica:</b> <span id="mFab">—</span></div>
+        <div class="mrow"><b>Auditor(es):</b> <span id="mAud">—</span></div>
       </div>
     </div>
-
-    <div class="panel">
-      <div class="pt">Cumplimiento por día de la semana</div>
-      <div class="ph">Sirve para ver si el desorden se concentra en ciertos días. Solo tiene lectura útil si se audita en días distintos.</div>
-      <div class="cwrap" style="height:250px"><canvas id="chDia"></canvas></div>
+    <div class="leyenda">
+      <i><span class="lg c ok">✓</span> Se hizo</i>
+      <i><span class="lg c x">✗</span> No se hizo</i>
+      <i><span class="lg c na">–</span> No aplica</i>
+      <i><span class="lg c falta">!</span> Día pasado sin registrar</i>
+      <i><span class="lg c esp"></span> Aún no toca</i>
     </div>
+    <div id="grilla"></div>
+  </div>
 
-    <div class="sectitle">Detalle de no conformidades</div>
-    <div class="panel">
-      <div class="pt" id="ptTabla">No conformidades del período</div>
-      <div class="ph">Ordenadas de la más reciente a la más antigua.</div>
-      <div class="tscroll">
-        <table id="tblNC"><thead><tr>
-          <th>Fecha</th><th>Día</th><th>Semana</th><th>Sede</th><th>Sección</th><th>N°</th><th>Ítem</th><th>Observación</th><th>Auditor</th>
-        </tr></thead><tbody></tbody></table>
+  <div class="ncbox" id="ncbox">
+    <div class="pt" id="ncTitulo">No conformidades de la semana</div>
+    <div class="ph">Lo que se marcó X, con la observación que dejó el auditor en planta.</div>
+    <div id="ncCont"></div>
+  </div>
+
+  <div class="note" id="notaMetodo"></div>
+</div>
+
+<!-- MODAL DE ESTADÍSTICAS -->
+<div class="modal" id="modal">
+  <div class="mbox">
+    <div class="mhead">
+      <div>
+        <div class="mt">📊 ESTADÍSTICAS ACUMULADAS</div>
+        <div class="ms" id="mSub">—</div>
+      </div>
+      <button class="cerrar" id="btnCerrar">✕ Cerrar</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-t="sem">Semanal</button>
+      <button class="tab" data-t="mes">Mensual</button>
+      <button class="tab" data-t="anio">Anual</button>
+    </div>
+    <div class="mbody">
+      <div id="tabSem">
+        <div class="icards" id="icSem"></div>
+        <div class="panel">
+          <div class="pt">Cumplimiento semana a semana</div>
+          <div class="ph">Línea verde: % de cumplimiento. Barras rojas: cantidad de no conformidades.</div>
+          <div class="cwrap" style="height:300px"><canvas id="chSem"></canvas></div>
+        </div>
+        <div class="grid2">
+          <div class="panel"><div class="pt">Cumplimiento por sección</div>
+            <div class="ph">Histórico completo, promedio ponderado.</div>
+            <div class="cwrap" style="height:300px"><canvas id="chSecc"></canvas></div></div>
+          <div class="panel"><div class="pt">Ítems con más no conformidades</div>
+            <div class="ph">Veces que se marcó X (top 10 histórico).</div>
+            <div class="cwrap" style="height:300px"><canvas id="chTop"></canvas></div></div>
+        </div>
+      </div>
+
+      <div id="tabMes" class="hide">
+        <div class="panel">
+          <div class="pt">Cumplimiento por mes</div>
+          <div class="ph">Acumulado mensual: suma de OK ÷ suma de evaluados del mes.</div>
+          <div class="cwrap" style="height:300px"><canvas id="chMes"></canvas></div>
+        </div>
+        <div class="grid2">
+          <div class="panel"><div class="pt">Cumplimiento por día de la semana</div>
+            <div class="ph">Sirve para ver si el desorden se concentra en ciertos días.</div>
+            <div class="cwrap" style="height:280px"><canvas id="chDia"></canvas></div></div>
+          <div class="panel"><div class="pt">Resumen por mes</div>
+            <div class="ph">Detalle numérico del acumulado mensual.</div>
+            <div style="max-height:280px;overflow:auto"><table class="rs" id="tblMes"></table></div></div>
+        </div>
+      </div>
+
+      <div id="tabAnio" class="hide">
+        <div class="panel">
+          <div class="pt">Comparativo entre años por mes calendario</div>
+          <div class="ph" id="phAnio">—</div>
+          <div class="cwrap" style="height:320px"><canvas id="chAnio"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="pt">Resumen por año</div>
+          <div class="ph">Acumulado anual, promedio ponderado.</div>
+          <table class="rs" id="tblAnio"></table>
+        </div>
       </div>
     </div>
   </div>
-
-  <!-- VISTA COMPARATIVO ENTRE AÑOS -->
-  <div id="compareView" class="hide">
-    <div class="note" id="notaCmp"></div>
-    <div class="panel">
-      <div class="pt">Cumplimiento por mes calendario — comparativo entre años</div>
-      <div class="ph">Los años se superponen por mes para que sean comparables aunque el seguimiento del día a día sea semanal.</div>
-      <div class="cwrap" style="height:340px"><canvas id="chCmp"></canvas></div>
-    </div>
-    <div class="panel">
-      <div class="pt">Resumen por año</div>
-      <div class="ph">Promedio ponderado del año completo.</div>
-      <table id="tblAnios"><thead><tr>
-        <th>Año</th><th>Auditorías</th><th>Ítems evaluados</th><th>OK</th><th>No conformidades</th><th>% Cumplimiento</th>
-      </tr></thead><tbody></tbody></table>
-    </div>
-  </div>
-
 </div>
 
 <script>
 /* ===================================================================
-   CONFIGURACIÓN — pega aquí la URL /exec de tu Apps Script
+   CONFIGURACIÓN
 =================================================================== */
 const API = 'https://script.google.com/macros/s/AKfycbzP-DE7hsPEXoFr3QY6noIOMT-kUKrNXji5tRmjWBD-Ikdj-49vorfu9Z52xUDkbsv6/exec';
-const REFRESCO_SEG = 60;
+const REFRESCO_SEG = 45;
 
-/* Al exportar, estas dos líneas se rellenan con los datos y quedan dentro del
-   archivo generado. Mientras valen null, el dashboard se conecta al Sheet en vivo. */
+/* Al exportar, estas líneas se rellenan con los datos y quedan dentro del archivo. */
 const DATOS_EMBEBIDOS = null; /*__DATOS__*/
+const ITEMS_EMBEBIDOS = null; /*__ITEMS__*/
 const META_EXPORT = null; /*__META__*/
 /* =================================================================== */
 
@@ -239,530 +300,484 @@ Chart.defaults.plugins.tooltip.cornerRadius = 4;
 const C = {petrol:'#0E3B36',emer:'#10B981',sage:'#0F7A5A',slate:'#4E6B78',taupe:'#B45309',rose:'#DC2626',tan:'#F59E0B',warm:'#DCE5E2',warmL:'#F1F6F4',stone:'#5F726C'};
 const ROT = [C.taupe, C.slate, C.emer, C.rose, C.tan];
 const MESES = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SET','OCT','NOV','DIC'];
-const ORDEN_DIAS = ['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO','DOMINGO'];
+const DIAS_SEM = ['LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO','DOMINGO'];
+const DIAS_COR = {'LUNES':'LUN','MARTES':'MAR','MIÉRCOLES':'MIÉ','JUEVES':'JUE','VIERNES':'VIE','SÁBADO':'SÁB','DOMINGO':'DOM'};
 const $ = id => document.getElementById(id);
 
-let FILAS = [], CHARTS = {}, DONUTS = [];
-let F = {anio:null, gran:'semana', periodo:'TODOS', sede:'TODAS', comparar:false};
-
-/* ---------- utilidades ---------- */
-function pct(ok, x){ const b = ok + x; return b ? (ok*100/b) : null; }
-function f1(v){ return v === null ? '—' : v.toFixed(1) + '%'; }
-function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function destruir(k){ if(CHARTS[k]){ CHARTS[k].destroy(); delete CHARTS[k]; } }
-
-/* Clave y etiqueta de agrupación según granularidad */
-function claveGran(f, g){
-  if(g === 'dia')    return f.fecha;
-  if(g === 'semana') return f.semanaEtq || (f.anio + '-S' + String(f.semana).padStart(2,'0'));
-  if(g === 'mes')    return f.anio + '-' + String(f.mes).padStart(2,'0');
-  return String(f.anio);
-}
-function etiquetaGran(k, g){
-  if(g === 'dia'){ const p = k.split('-'); return p[2] + '/' + p[1]; }
-  if(g === 'semana'){ const p = k.split('-S'); return 'S' + p[1]; }
-  if(g === 'mes'){ const p = k.split('-'); return MESES[+p[1]-1] + ' ' + p[0].slice(2); }
-  return k;
-}
-function nombreGran(g){ return {dia:'día', semana:'semana', mes:'mes', anio:'año'}[g]; }
-
-/* ---------- carga ---------- */
+let FILAS = [], ITEMS = [], CHARTS = {};
+let F = {fab:null, sem:null};
 const ES_EXPORTADO = (DATOS_EMBEBIDOS !== null);
 
+/* ---------- utilidades ---------- */
+function pct(ok,x){ const b = ok+x; return b ? (ok*100/b) : null; }
+function f1(v){ return v === null ? '—' : v.toFixed(1) + '%'; }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function destruir(k){ if(CHARTS[k]){ CHARTS[k].destroy(); delete CHARTS[k]; } }
+function contar(rows){
+  let ok=0,x=0,na=0; const ids=new Set();
+  rows.forEach(r => { ids.add(r.id); if(r.res==='OK') ok++; else if(r.res==='X') x++; else na++; });
+  return {ok,x,na,ev:ok+x,aud:ids.size,pct:pct(ok,x)};
+}
+function agrupar(rows, k){
+  const m = new Map();
+  rows.forEach(r => { const v = k(r); if(v==null||v==='') return; if(!m.has(v)) m.set(v,[]); m.get(v).push(r); });
+  return m;
+}
+function hoyISO(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function semanaISOde(f){
+  const p = f.split('-');
+  const d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2]));
+  const dw = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dw);
+  const ini = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  const s = Math.ceil((((d-ini)/86400000)+1)/7);
+  return d.getUTCFullYear() + '-S' + String(s).padStart(2,'0');
+}
+/* Lunes de una semana ISO, formato "2026-S32" */
+function lunesDe(etq){
+  const p = etq.split('-S');
+  const a = +p[0], s = +p[1];
+  const d = new Date(Date.UTC(a, 0, 1 + (s-1)*7));
+  const dw = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() - dw + 1);
+  return d;
+}
+function masDias(d, n){ const r = new Date(d.getTime()); r.setUTCDate(r.getUTCDate()+n); return r; }
+function isoDe(d){ return d.toISOString().slice(0,10); }
+function ddmm(d){ return String(d.getUTCDate()).padStart(2,'0') + '/' + String(d.getUTCMonth()+1).padStart(2,'0'); }
+function rangoSemana(etq){
+  const l = lunesDe(etq), v = masDias(l,4);
+  return ddmm(l) + ' al ' + ddmm(v) + '/' + v.getUTCFullYear();
+}
+
+/* ---------- carga ---------- */
 async function cargar(){
-  /* Archivo exportado: los datos ya vienen adentro, no se consulta nada. */
   if(ES_EXPORTADO){
-    FILAS = DATOS_EMBEBIDOS;
-    $('hora').textContent = (META_EXPORT && META_EXPORT.generado) || '—';
+    FILAS = DATOS_EMBEBIDOS; ITEMS = ITEMS_EMBEBIDOS || [];
+    const m = META_EXPORT || {};
+    $('hora').textContent = m.generado || '—';
     $('nfilas').textContent = FILAS.length.toLocaleString('es-PE') + ' registros · copia estática';
-    inicializarFiltros();
-    pintar();
-    return;
-  }
-  if(API.indexOf('PEGA_AQUI') === 0){
-    return error('Falta configurar la URL del Apps Script en la constante <b>API</b> de este archivo.');
+    $('live').innerHTML = 'Copia estática<br>' + esc(m.generado || '');
+    inicializar(); return;
   }
   try{
     const r = await fetch(API + '?action=data');
     const j = await r.json();
     if(!j.ok) throw new Error(j.error || 'respuesta inválida');
-    FILAS = j.filas || [];
+    FILAS = j.filas || []; ITEMS = j.items || [];
     $('err').classList.remove('show');
     $('hora').textContent = new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
     $('nfilas').textContent = FILAS.length.toLocaleString('es-PE') + ' registros';
-    inicializarFiltros();
-    pintar();
+    inicializar();
   }catch(e){
-    error('No se pudo leer el Sheet: ' + e.message + '. Revisa que la implementación del Apps Script esté como "Cualquier persona" y que hayas publicado una versión NUEVA.');
+    $('err').innerHTML = 'No se pudo leer el Sheet: ' + esc(e.message) +
+      '. Revisa que la implementación del Apps Script esté como "Cualquier persona" y que hayas publicado una versión NUEVA.';
+    $('err').classList.add('show');
   }
 }
-function error(t){ $('err').innerHTML = t; $('err').classList.add('show'); }
 
 /* ---------- filtros ---------- */
-function inicializarFiltros(){
-  if(!FILAS.length){
-    $('vacio').classList.remove('hide');
-    $('mainView').classList.add('hide');
-    return;
+function fabricas(){
+  const s = new Set();
+  FILAS.forEach(f => s.add(f.sede));
+  ITEMS.forEach(i => { if(i.sede) s.add(i.sede); });
+  return [...s].filter(Boolean).sort();
+}
+function semanas(){
+  const s = new Set(FILAS.map(f => f.semanaEtq).filter(Boolean));
+  s.add(semanaISOde(hoyISO()));   // la semana en curso siempre está, aunque esté vacía
+  return [...s].sort();
+}
+
+function inicializar(){
+  const fabs = fabricas();
+  if(!fabs.length){ $('err').innerHTML = 'Todavía no hay datos ni catálogo. Envía el primer check list desde el celular.'; $('err').classList.add('show'); return; }
+  if(!F.fab || !fabs.includes(F.fab)) F.fab = fabs[0];
+  $('selFab').innerHTML = fabs.map(f => '<option value="'+esc(f)+'">'+esc(f)+'</option>').join('');
+  $('selFab').value = F.fab;
+
+  const sems = semanas();
+  if(!F.sem || !sems.includes(F.sem)) F.sem = sems[sems.length-1];
+  $('selSem').innerHTML = sems.slice().reverse().map(s =>
+    '<option value="'+s+'">Semana ' + (+s.split('-S')[1]) + ' · ' + rangoSemana(s) + '</option>').join('');
+  $('selSem').value = F.sem;
+
+  const i = sems.indexOf(F.sem);
+  $('btnPrev').disabled = (i <= 0);
+  $('btnNext').disabled = (i >= sems.length-1);
+
+  pintarSemana();
+}
+
+/* ---------- HOJA SEMANAL ---------- */
+function itemsDeFabrica(){
+  let its = ITEMS.filter(i => !i.sede || i.sede === F.fab);
+  if(!its.length){
+    /* Sin catálogo utilizable, la grilla se arma con lo que se haya registrado. */
+    const vistos = new Map();
+    FILAS.filter(f => f.sede === F.fab).forEach(f => {
+      const k = f.seccion + '||' + f.n;
+      if(!vistos.has(k)) vistos.set(k, {sede:f.sede, seccion:f.seccion, orden:99, n:f.n, item:f.item});
+    });
+    its = [...vistos.values()];
   }
-  $('vacio').classList.add('hide');
-  $('mainView').classList.remove('hide');
+  return its.sort((a,b) => (a.orden||99)-(b.orden||99) || a.n-b.n);
+}
 
-  const anios = [...new Set(FILAS.map(f => f.anio))].sort();
-  if(F.anio === null || !anios.includes(F.anio)) F.anio = anios[anios.length-1];
+function diasDeLaSemana(){
+  const base = DIAS_SEM.slice(0,5);
+  const enSem = new Set(FILAS.filter(f => f.semanaEtq === F.sem && f.sede === F.fab).map(f => f.dia));
+  if(enSem.has('SÁBADO')) base.push('SÁBADO');
+  if(enSem.has('DOMINGO')) base.push('DOMINGO');
+  return base;
+}
 
-  let html = anios.map(a => '<button class="ybtn'+(!F.comparar && F.anio===a?' active':'')+'" data-y="'+a+'">'+a+'</button>').join('');
-  if(anios.length > 1){
-    html += '<button class="ybtn'+(F.comparar?' active':'')+'" id="compareBtn">📊 Comparativo</button>';
-  }
-  $('yearBtns').innerHTML = html;
-  $('yearBtns').querySelectorAll('.ybtn[data-y]').forEach(b => {
-    b.onclick = () => { F.anio = +b.dataset.y; F.comparar = false; F.periodo = 'TODOS'; inicializarFiltros(); pintar(); };
+function pintarSemana(){
+  const its = itemsDeFabrica();
+  const dias = diasDeLaSemana();
+  const lunes = lunesDe(F.sem);
+  const hoy = hoyISO();
+  const rows = FILAS.filter(f => f.semanaEtq === F.sem && f.sede === F.fab);
+
+  /* mapa: SECCION||N||DIA -> registro */
+  const mapa = new Map();
+  rows.forEach(r => mapa.set(r.seccion + '||' + r.n + '||' + r.dia, r));
+
+  /* fechas de cada columna y su estado temporal */
+  const fechas = dias.map((d,i) => isoDe(masDias(lunes, i)));
+  const estado = fechas.map(f => f < hoy ? 'pasado' : (f === hoy ? 'hoy' : 'futuro'));
+
+  /* cabecera del reporte */
+  $('mSem').textContent = 'N° ' + (+F.sem.split('-S')[1]) + '  ·  ' + rangoSemana(F.sem);
+  $('mFab').textContent = F.fab;
+  const auds = [...new Set(rows.map(r => r.auditor).filter(Boolean))];
+  $('mAud').textContent = auds.length ? auds.join(', ') : '—';
+
+  /* ---- grilla ---- */
+  let html = '<table class="wk"><thead><tr>' +
+    '<th class="iz" colspan="2" style="width:auto">ÍTEM</th>' +
+    dias.map((d,i) => '<th class="' + (estado[i]==='hoy'?'hoy':'') + '">' + DIAS_COR[d] +
+      '<small>' + ddmm(masDias(lunes,i)) + (estado[i]==='hoy'?' · hoy':'') + '</small></th>').join('') +
+    '<th>%</th></tr></thead><tbody>';
+
+  const secs = [];
+  its.forEach(i => { if(!secs.includes(i.seccion)) secs.push(i.seccion); });
+
+  secs.forEach(sec => {
+    const isec = its.filter(i => i.seccion === sec);
+    const csec = contar(rows.filter(r => r.seccion === sec));
+    html += '<tr class="secrow"><td colspan="' + (3 + dias.length) + '">' + esc(sec) +
+      '<span class="cnt">' + (csec.ev ? f1(csec.pct) + ' · ' + csec.x + ' NC' : 'sin registros') + '</span></td></tr>';
+
+    isec.forEach(it => {
+      let ok=0, x=0;
+      const celdas = dias.map((d,i) => {
+        const r = mapa.get(it.seccion + '||' + it.n + '||' + d);
+        let cls, txt;
+        if(r){
+          if(r.res === 'OK'){ cls='ok'; txt='✓'; ok++; }
+          else if(r.res === 'X'){ cls='x'; txt='✗'; x++; }
+          else { cls='na'; txt='N/A'; }
+        }else{
+          if(estado[i] === 'futuro'){ cls='esp'; txt=''; }
+          else if(estado[i] === 'hoy'){ cls='esp'; txt=''; }
+          else { cls='falta'; txt='!'; }
+        }
+        const tip = r ? (r.res==='X' && r.obs ? ' title="'+esc(r.obs)+'"' : '') : '';
+        return '<td class="d ' + (estado[i]==='hoy'?'hoycol':'') + '"><span class="c ' + cls + '"' + tip + '>' + txt + '</span></td>';
+      }).join('');
+      const p = pct(ok,x);
+      html += '<tr><td class="num">' + it.n + '</td><td class="itm">' + esc(it.item) + '</td>' + celdas +
+        '<td class="pc" style="color:' + (p===null?C.stone:(p<100?C.rose:C.sage)) + '">' + (p===null?'—':p.toFixed(0)+'%') + '</td></tr>';
+    });
   });
-  if($('compareBtn')) $('compareBtn').onclick = () => { F.comparar = true; inicializarFiltros(); pintar(); };
+  html += '</tbody></table>';
+  $('grilla').innerHTML = html;
 
-  const sedes = [...new Set(FILAS.map(f => f.sede))].sort();
-  $('selSede').innerHTML = '<option value="TODAS">Todas</option>' + sedes.map(s => '<option value="'+s+'">'+s+'</option>').join('');
-  $('selSede').value = sedes.includes(F.sede) ? F.sede : 'TODAS';
-  F.sede = $('selSede').value;
-
-  llenarPeriodos();
-}
-
-function llenarPeriodos(){
-  const sel = $('selPeriodo');
-  if(F.gran === 'anio'){
-    sel.innerHTML = '<option value="TODOS">Todos los años</option>';
-    sel.value = 'TODOS'; F.periodo = 'TODOS';
-    sel.disabled = true;
-    return;
-  }
-  sel.disabled = false;
-  const base = FILAS.filter(f => f.anio === F.anio);
-  const claves = [...new Set(base.map(f => claveGran(f, F.gran)))].sort();
-  let etq;
-  if(F.gran === 'dia')      etq = k => { const f = base.find(x => x.fecha === k); const p = k.split('-'); return p[2]+'/'+p[1]+'/'+p[0] + (f ? ' · ' + f.dia : ''); };
-  else if(F.gran === 'semana') etq = k => 'Semana ' + (+k.split('-S')[1]) + ' · ' + k;
-  else                       etq = k => MESES[+k.split('-')[1]-1] + ' ' + k.split('-')[0];
-
-  sel.innerHTML = '<option value="TODOS">Todo el año ' + F.anio + '</option>' +
-    claves.slice().reverse().map(k => '<option value="'+k+'">'+etq(k)+'</option>').join('');
-  if(!claves.includes(F.periodo)) F.periodo = 'TODOS';
-  sel.value = F.periodo;
-}
-
-function filtradas(){
-  return FILAS.filter(f => {
-    if(F.gran !== 'anio' && f.anio !== F.anio) return false;
-    if(F.periodo !== 'TODOS' && claveGran(f, F.gran) !== F.periodo) return false;
-    if(F.sede !== 'TODAS' && f.sede !== F.sede) return false;
-    return true;
-  });
-}
-
-/* ---------- agregaciones ---------- */
-function contar(rows){
-  let ok=0, x=0, na=0; const ids = new Set();
-  rows.forEach(r => {
-    ids.add(r.id);
-    if(r.res === 'OK') ok++;
-    else if(r.res === 'X') x++;
-    else na++;
-  });
-  return {ok, x, na, ev: ok+x, total: rows.length, aud: ids.size, pct: pct(ok,x)};
-}
-function agrupar(rows, keyFn){
-  const m = new Map();
-  rows.forEach(r => {
-    const k = keyFn(r);
-    if(k === undefined || k === null || k === '') return;
-    if(!m.has(k)) m.set(k, []);
-    m.get(k).push(r);
-  });
-  return m;
-}
-
-/* ---------- pintado ---------- */
-function pintar(){
-  if(!FILAS.length) return;
-  if(F.comparar){
-    $('mainView').classList.add('hide');
-    $('compareView').classList.remove('hide');
-    pintarComparativo();
-    return;
-  }
-  $('compareView').classList.add('hide');
-  $('mainView').classList.remove('hide');
-
-  const rows = filtradas();
+  /* ---- KPIs de la semana ---- */
   const t = contar(rows);
-  const sp = $('selPeriodo');
-  const etqPeriodo = (F.gran === 'anio') ? 'todos los años'
-    : (F.periodo === 'TODOS' ? 'año ' + F.anio
-      : (sp.selectedIndex >= 0 ? sp.options[sp.selectedIndex].text : F.periodo));
+  const diasReg = new Set(rows.map(r => r.dia)).size;
+  const diasEsperados = estado.filter(e => e === 'pasado' || e === 'hoy').length;
+  const totalEsperado = its.length * Math.max(diasEsperados,1);
+  /* Pendientes = solo lo que falta de días YA cerrados. Si se contara contra
+     todas las filas de la semana, las marcas de hoy taparían un día pasado
+     incompleto y el faltante saldría en cero. */
+  const diasPasados = dias.filter((d,i) => estado[i] === 'pasado');
+  const marcasPasadas = rows.filter(r => diasPasados.indexOf(r.dia) >= 0).length;
+  const faltantes = Math.max(0, its.length * diasPasados.length - marcasPasadas);
 
-  /* KPIs */
   $('kpis').innerHTML =
-    kpi(f1(t.pct), 'Cumplimiento', t.ok + ' OK de ' + t.ev + ' evaluados', 'primary') +
-    kpi(t.x.toLocaleString('es-PE'), 'No conformidades', 'ítems marcados X', t.x ? 'bad' : '') +
-    kpi(t.aud.toLocaleString('es-PE'), 'Check lists realizados', etqPeriodo) +
-    kpi(t.ev.toLocaleString('es-PE'), 'Ítems evaluados', t.na + ' N/A excluidos') +
-    kpi([...new Set(rows.map(r => r.seccion))].length, 'Secciones auditadas', [...new Set(rows.map(r => r.sede))].length + ' sede(s)');
+    kpi(f1(t.pct), 'Cumplimiento de la semana', t.ok + ' OK de ' + t.ev + ' evaluados', 'primary') +
+    kpi(t.x, 'No conformidades', 'ítems marcados X', t.x ? 'bad' : '') +
+    kpi(diasReg + '/' + dias.length, 'Días registrados', 'de ' + dias.length + ' días de la semana',
+        diasReg < diasEsperados ? 'warn' : '') +
+    kpi(faltantes, 'Marcas pendientes', 'de días ya pasados', faltantes ? 'warn' : '') +
+    '<div class="kpi"><div class="v">' + its.length + '</div><div class="l">Ítems del check list</div>' +
+    '<div class="s">' + secs.length + ' secciones</div>' +
+    '<div class="pbar"><i style="width:' + (totalEsperado ? Math.min(100, rows.length*100/totalEsperado) : 0) + '%"></i></div></div>';
+
+  /* ---- no conformidades ---- */
+  const nc = rows.filter(r => r.res === 'X')
+    .sort((a,b) => a.fecha.localeCompare(b.fecha) || a.seccion.localeCompare(b.seccion) || a.n-b.n);
+  $('ncTitulo').textContent = 'No conformidades de la semana (' + nc.length + ')';
+  $('ncCont').innerHTML = nc.length
+    ? '<table class="nc"><thead><tr><th>Día</th><th>Sección</th><th>N°</th><th>Ítem</th><th>Observación</th><th>Auditor</th></tr></thead><tbody>' +
+      nc.map(r => '<tr><td class="dia">' + DIAS_COR[r.dia] + ' ' + r.fecha.slice(8,10) + '/' + r.fecha.slice(5,7) + '</td>' +
+        '<td>' + esc(r.seccion) + '</td><td>' + r.n + '</td><td>' + esc(r.item) + '</td>' +
+        '<td style="color:' + (r.obs ? '#333' : C.taupe) + '">' + (r.obs ? esc(r.obs) : '(sin observación)') + '</td>' +
+        '<td>' + esc(r.auditor) + '</td></tr>').join('') + '</tbody></table>'
+    : '<div class="sinnc">✓ Sin no conformidades en la semana</div>';
 
   $('notaMetodo').innerHTML =
-    '<b>Metodología:</b> % de cumplimiento = ítems OK ÷ (OK + X). Los <b>N/A</b> se excluyen del denominador, ' +
-    'así que un check list con muchos N/A no infla ni castiga el porcentaje. Los promedios por sección, día y sede son ' +
-    '<b>ponderados</b> (suma de OK ÷ suma de evaluados), no promedio de porcentajes. ' +
-    'Vista actual: <b>' + esc(etqPeriodo) + '</b>, agrupada por <b>' + nombreGran(F.gran) + '</b>' +
-    (F.sede !== 'TODAS' ? ', sede <b>' + esc(F.sede) + '</b>' : '') + '. ' +
-    'No hay meta definida por LIVES para este check list — cuando la definan, se agrega como línea de referencia.';
-
-  pintarIcards(rows);
-  pintarSedes(rows);
-  pintarTendencia();
-  pintarSecciones(rows);
-  pintarTop(rows);
-  pintarDias(rows);
-  pintarTabla(rows);
+    '<b>Cómo leer esta hoja:</b> % de cumplimiento = ítems OK ÷ (OK + X). Los <b>N/A</b> no entran al denominador. ' +
+    'Las celdas con <b>!</b> son días ya pasados sin registro: no cuentan como incumplimiento, cuentan como falta de auditoría. ' +
+    'Las celdas vacías son días que aún no llegan. La hoja se actualiza sola cada ' + REFRESCO_SEG + ' segundos ' +
+    'conforme el auditor va marcando desde el celular. No hay meta definida por LIVES para este check list.';
 }
 
-function kpi(v, l, s, cls){
+function kpi(v,l,s,cls){
   return '<div class="kpi '+(cls||'')+'"><div class="v">'+v+'</div><div class="l">'+l+'</div><div class="s">'+(s||'')+'</div></div>';
 }
 
-function pintarIcards(rows){
-  const porSec = agrupar(rows, r => r.seccion);
-  let peor = null, mejor = null;
-  porSec.forEach((v,k) => {
-    const c = contar(v);
-    if(c.pct === null) return;
-    if(!peor  || c.pct < peor.p)  peor  = {k, p:c.pct, x:c.x};
-    if(!mejor || c.pct > mejor.p) mejor = {k, p:c.pct, x:c.x};
-  });
-  const porItem = agrupar(rows.filter(r => r.res === 'X'), r => r.seccion + ' · ' + r.item);
-  let topItem = null;
-  porItem.forEach((v,k) => { if(!topItem || v.length > topItem.n) topItem = {k, n:v.length}; });
-
-  $('icards').innerHTML =
-    '<div class="icard bad"><div class="il">Sección más crítica</div><div class="iv">' + (peor ? esc(peor.k) : '—') +
-      '</div><div class="is">' + (peor ? f1(peor.p) + ' de cumplimiento · ' + peor.x + ' NC' : 'sin datos') + '</div></div>' +
-    '<div class="icard"><div class="il">Sección más sólida</div><div class="iv">' + (mejor ? esc(mejor.k) : '—') +
-      '</div><div class="is">' + (mejor ? f1(mejor.p) + ' de cumplimiento' : 'sin datos') + '</div></div>' +
-    '<div class="icard up"><div class="il">Hallazgo más repetido</div><div class="iv" style="font-size:14px;line-height:1.3">' +
-      (topItem ? esc(topItem.k) : '—') + '</div><div class="is">' + (topItem ? topItem.n + ' vez/veces en el período' : 'sin no conformidades') + '</div></div>';
+/* ---------- ESTADÍSTICAS (modal) ---------- */
+function abrirStats(){
+  $('modal').classList.add('show');
+  $('mSub').textContent = 'Fábrica: ' + F.fab + ' · histórico completo · promedios ponderados (OK ÷ evaluados)';
+  mostrarTab('sem');
 }
-
-function pintarSedes(rows){
-  DONUTS.forEach(d => d.destroy()); DONUTS = [];
-  const porSede = agrupar(rows, r => r.sede);
-  const sedes = [...porSede.keys()].sort();
-  $('sedes').innerHTML = sedes.map((s,i) => {
-    const c = contar(porSede.get(s));
-    const nc = c.ev ? (c.x*100/c.ev) : 0;
-    return '<div class="kpanel'+(i%2?' tall':'')+'">' +
-      '<div class="kh">'+esc(s)+'</div>' +
-      '<div class="kcells">' +
-        '<div class="kcell"><div class="v">'+f1(c.pct)+'</div><div class="l">Cumplimiento</div></div>' +
-        '<div class="kcell"><div class="v re">'+c.x+'</div><div class="l">No conformidades</div></div>' +
-        '<div class="kcell"><div class="v">'+c.aud+'</div><div class="l">Check lists</div></div>' +
-        '<div class="kcell"><div class="v">'+c.ev+'</div><div class="l">Ítems evaluados</div></div>' +
-      '</div>' +
-      '<div class="donutwrap"><div class="dc"><canvas id="dnt'+i+'"></canvas></div>' +
-      '<div class="dleg"><b>'+nc.toFixed(1)+'%</b>de los ítems evaluados en esta sede salieron no conformes ('+c.x+' de '+c.ev+')</div></div>' +
-    '</div>';
-  }).join('') || '<div class="empty">Sin datos en el período seleccionado.</div>';
-
-  sedes.forEach((s,i) => {
-    const c = contar(porSede.get(s));
-    const el = $('dnt'+i); if(!el) return;
-    DONUTS.push(new Chart(el, {
-      type:'doughnut',
-      data:{labels:['No conforme','OK'], datasets:[{data:[c.x, c.ok], backgroundColor:[C.rose, C.warmL], borderWidth:0}]},
-      options:{cutout:'70%', plugins:{legend:{display:false}, tooltip:{callbacks:{label:c2 => c2.label + ': ' + c2.parsed}}}, maintainAspectRatio:false}
-    }));
+function cerrarStats(){
+  $('modal').classList.remove('show');
+  ['sem','secc','top','mes','dia','anio'].forEach(destruir);
+}
+function mostrarTab(t){
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.t === t));
+  $('tabSem').classList.toggle('hide', t !== 'sem');
+  $('tabMes').classList.toggle('hide', t !== 'mes');
+  $('tabAnio').classList.toggle('hide', t !== 'anio');
+  requestAnimationFrame(() => {
+    if(t === 'sem')  pintarStatsSemanal();
+    if(t === 'mes')  pintarStatsMensual();
+    if(t === 'anio') pintarStatsAnual();
   });
 }
+function baseStats(){ return FILAS.filter(f => f.sede === F.fab); }
 
-function pintarTendencia(){
-  destruir('tend');
-  const base = FILAS.filter(f => (F.gran === 'anio' || f.anio === F.anio) && (F.sede === 'TODAS' || f.sede === F.sede));
-  const m = agrupar(base, r => claveGran(r, F.gran));
-  const claves = [...m.keys()].sort();
-  const datos = claves.map(k => { const c = contar(m.get(k)); return c.pct; });
-  const ncs   = claves.map(k => contar(m.get(k)).x);
-  const sel   = claves.map(k => (F.periodo !== 'TODOS' && k === F.periodo));
+function pintarStatsSemanal(){
+  const base = baseStats();
+  destruir('sem'); destruir('secc'); destruir('top');
 
-  $('ttlTend').textContent = 'Tendencia por ' + nombreGran(F.gran);
-  $('ptTend').textContent = 'Cumplimiento por ' + nombreGran(F.gran) + (F.gran === 'anio' ? ' (histórico)' : ' — ' + F.anio);
-  $('phTend').textContent = '% de ítems OK sobre evaluados (OK + X). El punto resaltado es el período elegido arriba. Barras rojas = cantidad de no conformidades.';
+  const m = agrupar(base, r => r.semanaEtq);
+  const ks = [...m.keys()].sort();
+  const datos = ks.map(k => contar(m.get(k)).pct);
+  const ncs = ks.map(k => contar(m.get(k)).x);
+  const selK = ks.map(k => k === F.sem);
 
-  CHARTS.tend = new Chart($('chTend'), {
-    data:{
-      labels: claves.map(k => etiquetaGran(k, F.gran)),
+  /* tarjetas resumen */
+  const t = contar(base);
+  const porSec = agrupar(base, r => r.seccion);
+  let peor = null;
+  porSec.forEach((v,k) => { const c = contar(v); if(c.pct===null) return; if(!peor || c.pct < peor.p) peor = {k, p:c.pct, x:c.x}; });
+  const ult = ks.length ? contar(m.get(ks[ks.length-1])) : null;
+  const prev = ks.length > 1 ? contar(m.get(ks[ks.length-2])) : null;
+  let delta = '—';
+  if(ult && prev && ult.pct !== null && prev.pct !== null){
+    const d = ult.pct - prev.pct;
+    delta = (d >= 0 ? '▲ +' : '▼ ') + d.toFixed(1) + ' pts';
+  }
+  $('icSem').innerHTML =
+    '<div class="icard"><div class="il">Cumplimiento histórico</div><div class="iv">' + f1(t.pct) +
+      '</div><div class="is">' + t.ok + ' OK de ' + t.ev + ' evaluados · ' + ks.length + ' semanas</div></div>' +
+    '<div class="icard up"><div class="il">Última semana vs anterior</div><div class="iv">' + delta +
+      '</div><div class="is">' + (ult ? f1(ult.pct) + ' en ' + ks[ks.length-1] : 'sin datos') + '</div></div>' +
+    '<div class="icard bad"><div class="il">Sección más crítica</div><div class="iv" style="font-size:15px">' +
+      (peor ? esc(peor.k) : '—') + '</div><div class="is">' + (peor ? f1(peor.p) + ' · ' + peor.x + ' NC acumuladas' : 'sin datos') + '</div></div>';
+
+  CHARTS.sem = new Chart($('chSem'), {
+    data:{ labels: ks.map(k => 'S' + (+k.split('-S')[1])),
       datasets:[
         {type:'bar', label:'No conformidades', data:ncs, backgroundColor:'rgba(220,38,38,.18)', borderColor:C.rose, borderWidth:1, yAxisID:'y2', order:2, borderRadius:3},
         {type:'line', label:'% Cumplimiento', data:datos, borderColor:C.sage, backgroundColor:'rgba(15,122,90,.08)', borderWidth:2.5, fill:true, tension:.25, yAxisID:'y', order:1, spanGaps:true,
-         pointRadius: sel.map(s => s?7:3.5), pointBackgroundColor: sel.map(s => s?C.tan:C.sage), pointBorderColor:'#fff', pointBorderWidth: sel.map(s => s?2:1)}
-      ]
-    },
-    options:{
-      maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
+         pointRadius: selK.map(s => s?7:3.5), pointBackgroundColor: selK.map(s => s?C.tan:C.sage), pointBorderColor:'#fff'}
+      ]},
+    options:{maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
       plugins:{legend:{position:'bottom', labels:{boxWidth:12, usePointStyle:true}},
-        tooltip:{callbacks:{label: c => c.dataset.yAxisID === 'y' ? '% Cumplimiento: ' + (c.parsed.y===null?'—':c.parsed.y.toFixed(1)+'%') : 'No conformidades: ' + c.parsed.y}}},
-      scales:{
-        y:{position:'left', min:0, max:100, ticks:{callback:v => v+'%'}, grid:{color:C.warmL}, title:{display:true, text:'% Cumplimiento'}},
-        y2:{position:'right', min:0, grid:{display:false}, title:{display:true, text:'N° de NC'}},
-        x:{grid:{display:false}, ticks:{maxRotation:0, autoSkip:true}}
-      }
-    }
+        tooltip:{callbacks:{title: c => 'Semana ' + ks[c[0].dataIndex] + ' (' + rangoSemana(ks[c[0].dataIndex]) + ')',
+          label: c => c.dataset.yAxisID==='y' ? '% Cumplimiento: ' + (c.parsed.y===null?'—':c.parsed.y.toFixed(1)+'%') : 'No conformidades: ' + c.parsed.y}}},
+      scales:{y:{position:'left',min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:C.warmL}},
+        y2:{position:'right',min:0,grid:{display:false}}, x:{grid:{display:false}}}}
   });
-}
 
-function pintarSecciones(rows){
-  destruir('sec');
-  const m = agrupar(rows, r => r.seccion);
-  const arr = [...m.keys()].map(k => { const c = contar(m.get(k)); return {k, p:c.pct===null?0:c.pct, x:c.x, ev:c.ev}; })
-    .sort((a,b) => a.p - b.p);
-  CHARTS.sec = new Chart($('chSec'), {
+  const arr = [...porSec.keys()].map(k => { const c = contar(porSec.get(k)); return {k, p:c.pct===null?0:c.pct, x:c.x, ev:c.ev}; }).sort((a,b)=>a.p-b.p);
+  CHARTS.secc = new Chart($('chSecc'), {
     type:'bar',
-    data:{labels: arr.map(a => a.k), datasets:[{
-      label:'% Cumplimiento', data: arr.map(a => a.p),
-      backgroundColor: arr.map(a => a.p < 80 ? C.rose : C.sage), borderRadius:3, barThickness:16
-    }]},
-    options:{
-      indexAxis:'y', maintainAspectRatio:false,
-      plugins:{legend:{display:false},
-        tooltip:{callbacks:{label: c => c.parsed.x.toFixed(1) + '% · ' + arr[c.dataIndex].x + ' NC de ' + arr[c.dataIndex].ev + ' evaluados'}}},
-      scales:{x:{min:0, max:100, ticks:{callback:v => v+'%'}, grid:{color:C.warmL}}, y:{grid:{display:false}, ticks:{font:{size:11}}}}
-    },
-    plugins:[etiquetasBarra('x','%')]
+    data:{labels: arr.map(a=>a.k), datasets:[{data: arr.map(a=>a.p), backgroundColor: arr.map(a => a.p<80?C.rose:C.sage), borderRadius:3, barThickness:16}]},
+    options:{indexAxis:'y', maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label: c => c.parsed.x.toFixed(1)+'% · '+arr[c.dataIndex].x+' NC de '+arr[c.dataIndex].ev+' evaluados'}}},
+      scales:{x:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:C.warmL}}, y:{grid:{display:false},ticks:{font:{size:10}}}}},
+    plugins:[etiquetas('x','%')]
   });
-}
 
-function pintarTop(rows){
-  destruir('top');
-  const m = agrupar(rows.filter(r => r.res === 'X'), r => r.item);
-  const arr = [...m.keys()].map(k => ({k, n:m.get(k).length, sec:m.get(k)[0].seccion}))
-    .sort((a,b) => b.n - a.n).slice(0,10);
-  if(!arr.length){
-    CHARTS.top = new Chart($('chTop'), {type:'bar', data:{labels:['Sin no conformidades'], datasets:[{data:[0], backgroundColor:C.warm}]},
-      options:{indexAxis:'y', maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{min:0}}}});
-    return;
-  }
+  const mi = agrupar(base.filter(r => r.res==='X'), r => r.item);
+  const top = [...mi.keys()].map(k => ({k, n:mi.get(k).length, sec:mi.get(k)[0].seccion})).sort((a,b)=>b.n-a.n).slice(0,10);
   CHARTS.top = new Chart($('chTop'), {
     type:'bar',
-    data:{labels: arr.map(a => a.k.length > 46 ? a.k.slice(0,46) + '…' : a.k), datasets:[{
-      label:'Veces marcado X', data: arr.map(a => a.n),
-      backgroundColor: arr.map((a,i) => ROT[i % ROT.length]), borderRadius:3, barThickness:16
-    }]},
-    options:{
-      indexAxis:'y', maintainAspectRatio:false,
-      plugins:{legend:{display:false},
-        tooltip:{callbacks:{title: c => arr[c[0].dataIndex].k, label: c => arr[c.dataIndex].sec + ' · ' + c.parsed.x + ' vez/veces'}}},
-      scales:{x:{min:0, ticks:{precision:0}, grid:{color:C.warmL}}, y:{grid:{display:false}, ticks:{font:{size:10}}}}
-    },
-    plugins:[etiquetasBarra('x','')]
+    data:{labels: top.length ? top.map(a => a.k.length>44 ? a.k.slice(0,44)+'…' : a.k) : ['Sin no conformidades'],
+      datasets:[{data: top.length ? top.map(a=>a.n) : [0], backgroundColor: top.map((a,i)=>ROT[i%ROT.length]), borderRadius:3, barThickness:16}]},
+    options:{indexAxis:'y', maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{title: c => top.length?top[c[0].dataIndex].k:'', label: c => top.length ? top[c.dataIndex].sec+' · '+c.parsed.x+' vez/veces' : ''}}},
+      scales:{x:{min:0,ticks:{precision:0},grid:{color:C.warmL}}, y:{grid:{display:false},ticks:{font:{size:10}}}}},
+    plugins:[etiquetas('x','')]
   });
 }
 
-function pintarDias(rows){
-  destruir('dia');
-  const m = agrupar(rows, r => r.dia);
-  const labels = ORDEN_DIAS.filter(d => m.has(d));
-  const datos = labels.map(d => { const c = contar(m.get(d)); return c.pct; });
-  const auds  = labels.map(d => contar(m.get(d)).aud);
+function pintarStatsMensual(){
+  const base = baseStats();
+  destruir('mes'); destruir('dia');
+  const m = agrupar(base, r => r.anio + '-' + String(r.mes).padStart(2,'0'));
+  const ks = [...m.keys()].sort();
+  CHARTS.mes = new Chart($('chMes'), {
+    data:{labels: ks.map(k => MESES[+k.split('-')[1]-1] + ' ' + k.split('-')[0].slice(2)),
+      datasets:[
+        {type:'bar', label:'No conformidades', data: ks.map(k=>contar(m.get(k)).x), backgroundColor:'rgba(220,38,38,.18)', borderColor:C.rose, borderWidth:1, yAxisID:'y2', order:2, borderRadius:3},
+        {type:'line', label:'% Cumplimiento', data: ks.map(k=>contar(m.get(k)).pct), borderColor:C.sage, backgroundColor:'rgba(15,122,90,.08)', borderWidth:2.5, fill:true, tension:.25, yAxisID:'y', order:1, spanGaps:true, pointRadius:4}
+      ]},
+    options:{maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,usePointStyle:true}}},
+      scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:C.warmL}}, y2:{position:'right',min:0,grid:{display:false}}, x:{grid:{display:false}}}}
+  });
+
+  const md = agrupar(base, r => r.dia);
+  const ld = DIAS_SEM.filter(d => md.has(d));
   CHARTS.dia = new Chart($('chDia'), {
     type:'bar',
-    data:{labels, datasets:[{label:'% Cumplimiento', data:datos, backgroundColor:C.slate, borderRadius:3, maxBarThickness:52}]},
-    options:{
-      maintainAspectRatio:false,
-      plugins:{legend:{display:false},
-        tooltip:{callbacks:{label: c => (c.parsed.y===null?'—':c.parsed.y.toFixed(1)+'%') + ' · ' + auds[c.dataIndex] + ' check list(s)'}}},
-      scales:{y:{min:0, max:100, ticks:{callback:v => v+'%'}, grid:{color:C.warmL}}, x:{grid:{display:false}}}
-    },
-    plugins:[etiquetasBarra('y','%')]
+    data:{labels: ld.map(d => DIAS_COR[d]), datasets:[{data: ld.map(d=>contar(md.get(d)).pct), backgroundColor:C.slate, borderRadius:3, maxBarThickness:52}]},
+    options:{maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label: c => (c.parsed.y===null?'—':c.parsed.y.toFixed(1)+'%') + ' · ' + contar(md.get(ld[c.dataIndex])).ev + ' evaluados'}}},
+      scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:C.warmL}}, x:{grid:{display:false}}}},
+    plugins:[etiquetas('y','%')]
   });
+
+  $('tblMes').innerHTML = '<thead><tr><th>Mes</th><th>Semanas</th><th>Evaluados</th><th>OK</th><th>NC</th><th>%</th></tr></thead><tbody>' +
+    ks.slice().reverse().map(k => { const c = contar(m.get(k));
+      const sems = new Set(m.get(k).map(r=>r.semanaEtq)).size;
+      return '<tr><td><b>' + MESES[+k.split('-')[1]-1] + ' ' + k.split('-')[0] + '</b></td><td>' + sems + '</td><td>' + c.ev +
+        '</td><td>' + c.ok + '</td><td style="color:' + C.rose + ';font-weight:700">' + c.x + '</td>' +
+        '<td><b style="color:' + (c.pct!==null&&c.pct<80?C.rose:C.sage) + '">' + f1(c.pct) + '</b></td></tr>'; }).join('') + '</tbody>';
 }
 
-/* Etiquetas al final de cada barra (fuera de la barra, no encima) */
-function etiquetasBarra(eje, suf){
-  return {
-    id:'etq' + eje + suf,
-    afterDatasetsDraw(ch){
-      const ctx = ch.ctx;
-      ctx.save();
-      ctx.font = '700 11px Calibri, Arial, sans-serif';
-      ctx.fillStyle = '#333';
-      ch.data.datasets.forEach((ds, di) => {
-        ch.getDatasetMeta(di).data.forEach((el, i) => {
-          const v = ds.data[i];
-          if(v === null || v === undefined) return;
-          const txt = (suf === '%') ? v.toFixed(1) + '%' : String(v);
-          if(eje === 'x'){ ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(txt, el.x + 6, el.y); }
-          else { ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(txt, el.x, el.y - 4); }
-        });
-      });
-      ctx.restore();
-    }
-  };
-}
-
-function pintarTabla(rows){
-  const nc = rows.filter(r => r.res === 'X').sort((a,b) => (b.fecha + b.sede).localeCompare(a.fecha + a.sede));
-  $('ptTabla').textContent = 'No conformidades del período (' + nc.length + ')';
-  const tb = $('tblNC').querySelector('tbody');
-  if(!nc.length){
-    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--stone);padding:24px">Sin no conformidades en el período seleccionado.</td></tr>';
-    return;
-  }
-  tb.innerHTML = nc.slice(0,300).map(r =>
-    '<tr><td>'+esc(r.fecha)+'</td><td>'+esc(r.dia)+'</td><td>'+esc(r.semanaEtq)+'</td><td>'+esc(r.sede)+'</td>' +
-    '<td>'+esc(r.seccion)+'</td><td class="nc">'+r.n+'</td><td>'+esc(r.item)+'</td>' +
-    '<td style="color:'+(r.obs?'#333':'#B45309')+'">'+(r.obs?esc(r.obs):'(sin observación)')+'</td><td>'+esc(r.auditor)+'</td></tr>'
-  ).join('') + (nc.length > 300 ? '<tr><td colspan="9" style="color:var(--stone)">Mostrando las 300 más recientes de '+nc.length+'. Usa Exportar para el detalle completo.</td></tr>' : '');
-}
-
-/* ---------- comparativo entre años ---------- */
-function pintarComparativo(){
-  destruir('cmp');
-  const base = FILAS.filter(f => F.sede === 'TODAS' || f.sede === F.sede);
+function pintarStatsAnual(){
+  const base = baseStats();
+  destruir('anio');
   const anios = [...new Set(base.map(f => f.anio))].sort();
   const ds = anios.map((a,i) => {
     const rows = base.filter(f => f.anio === a);
     const m = agrupar(rows, r => r.mes);
-    const data = MESES.map((_,mi) => { const g = m.get(mi+1); return g ? contar(g).pct : null; });
     const col = (i === anios.length-1) ? C.sage : ROT[i % ROT.length];
-    return {label:String(a), data, borderColor:col, backgroundColor:col, borderWidth: (i===anios.length-1?3:2), tension:.25, spanGaps:true, pointRadius:4};
+    return {label:String(a), data: MESES.map((_,mi) => { const g = m.get(mi+1); return g ? contar(g).pct : null; }),
+      borderColor:col, backgroundColor:col, borderWidth:(i===anios.length-1?3:2), tension:.25, spanGaps:true, pointRadius:4};
   });
-  CHARTS.cmp = new Chart($('chCmp'), {
+  CHARTS.anio = new Chart($('chAnio'), {
     type:'line', data:{labels:MESES, datasets:ds},
-    options:{maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
-      plugins:{legend:{position:'bottom', labels:{boxWidth:12, usePointStyle:true}},
+    options:{maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,usePointStyle:true}},
         tooltip:{callbacks:{label: c => c.dataset.label + ': ' + (c.parsed.y===null?'sin datos':c.parsed.y.toFixed(1)+'%')}}},
-      scales:{y:{min:0, max:100, ticks:{callback:v => v+'%'}, grid:{color:C.warmL}}, x:{grid:{display:false}}}}
+      scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:C.warmL}}, x:{grid:{display:false}}}}
   });
 
-  const anioActual = new Date().getFullYear();
-  $('notaCmp').innerHTML = '<b>Comparativo de años · ' + anios.join(' vs ') + '</b> · % de cumplimiento por mes calendario ' +
-    '(comparable entre años aunque el seguimiento del día a día sea diario o semanal). Promedio ponderado: OK ÷ (OK + X). ' +
-    (anios.includes(anioActual) ? '<b>' + anioActual + ' es año en curso: los meses sin auditorías aparecen vacíos, no en cero.</b> ' : '') +
-    (F.sede !== 'TODAS' ? 'Filtrado por sede <b>' + esc(F.sede) + '</b>. ' : 'Todas las sedes. ') +
-    'No hay meta definida por LIVES para este check list.';
+  const actual = new Date().getFullYear();
+  $('phAnio').innerHTML = anios.length > 1
+    ? 'Comparativo ' + anios.join(' vs ') + ' · % por mes calendario, comparable entre años. ' +
+      (anios.includes(actual) ? '<b>' + actual + ' es año en curso: los meses sin auditorías quedan vacíos, no en cero.</b>' : '')
+    : 'Solo hay datos de ' + (anios[0] || '—') + '. El comparativo entre años aparece solo cuando exista un segundo año.';
 
-  $('tblAnios').querySelector('tbody').innerHTML = anios.map(a => {
-    const c = contar(base.filter(f => f.anio === a));
-    return '<tr><td><b>'+a+'</b></td><td>'+c.aud+'</td><td>'+c.ev+'</td><td>'+c.ok+'</td>' +
-      '<td class="nc">'+c.x+'</td><td><b style="color:'+(c.pct!==null&&c.pct<80?C.rose:C.sage)+'">'+f1(c.pct)+'</b></td></tr>';
-  }).join('');
+  $('tblAnio').innerHTML = '<thead><tr><th>Año</th><th>Semanas</th><th>Días auditados</th><th>Evaluados</th><th>OK</th><th>NC</th><th>%</th></tr></thead><tbody>' +
+    anios.map(a => { const rows = base.filter(f=>f.anio===a), c = contar(rows);
+      return '<tr><td><b>' + a + '</b></td><td>' + new Set(rows.map(r=>r.semanaEtq)).size + '</td><td>' + new Set(rows.map(r=>r.fecha)).size +
+        '</td><td>' + c.ev + '</td><td>' + c.ok + '</td><td style="color:' + C.rose + ';font-weight:700">' + c.x + '</td>' +
+        '<td><b style="color:' + (c.pct!==null&&c.pct<80?C.rose:C.sage) + '">' + f1(c.pct) + '</b></td></tr>'; }).join('') + '</tbody>';
 }
 
-/* ---------- exportar: HTML interactivo autocontenido ----------
-   Genera una copia de este mismo dashboard con los datos escritos adentro.
-   El archivo resultante se abre con doble clic, funciona sin internet y sin
-   acceso al Google Sheet, y conserva los filtros (día/semana/mes/año,
-   comparativo, sede) para que el cliente navegue por su cuenta. */
+/* etiquetas al final de las barras */
+function etiquetas(eje, suf){
+  return {id:'et'+eje+suf, afterDatasetsDraw(ch){
+    const ctx = ch.ctx; ctx.save();
+    ctx.font = '700 11px Calibri, Arial, sans-serif'; ctx.fillStyle = '#333';
+    ch.data.datasets.forEach((ds,di) => ch.getDatasetMeta(di).data.forEach((el,i) => {
+      const v = ds.data[i]; if(v===null||v===undefined) return;
+      const txt = (suf==='%') ? v.toFixed(1)+'%' : String(v);
+      if(eje==='x'){ ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(txt, el.x+6, el.y); }
+      else { ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillText(txt, el.x, el.y-4); }
+    }));
+    ctx.restore();
+  }};
+}
+
+/* ---------- exportar copia interactiva ---------- */
 async function exportarHTML(){
   if(!FILAS.length) return alert('No hay datos para exportar.');
-
-  /* Alcance: se respeta la sede elegida y el año en curso de la vista, pero NO
-     el período fino: si exportara solo una semana, el cliente no podría cambiar
-     de granularidad y el archivo dejaría de ser interactivo. */
-  const rows = FILAS.filter(f => {
-    if(F.sede !== 'TODAS' && f.sede !== F.sede) return false;
-    if(!F.comparar && F.gran !== 'anio' && f.anio !== F.anio) return false;
-    return true;
-  });
-  if(!rows.length) return alert('El filtro actual no tiene datos que exportar.');
-
-  const btn = $('btnExp');
-  const txtOrig = btn.textContent;
+  const rows = FILAS.filter(f => f.sede === F.fab);
+  if(!rows.length) return alert('Esta fábrica no tiene datos.');
+  const btn = $('btnExp'), txt = btn.textContent;
   btn.textContent = 'Generando…'; btn.disabled = true;
-
   try{
-    /* Se toma el código fuente original del archivo, no el DOM ya pintado. */
     let src;
     try{
       const r = await fetch(location.href, {cache:'no-store'});
       if(!r.ok) throw new Error('HTTP ' + r.status);
       src = await r.text();
       if(src.indexOf('/*__DATOS__*/') < 0) throw new Error('marcador ausente');
-    }catch(e){
-      src = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-    }
+    }catch(e){ src = '<!DOCTYPE html>\n' + document.documentElement.outerHTML; }
 
-    const alcance =
-      (F.comparar || F.gran === 'anio')
-        ? 'Todos los años (' + [...new Set(rows.map(f => f.anio))].sort().join(', ') + ')'
-        : 'Año ' + F.anio;
-    const meta = {
-      generado: new Date().toLocaleString('es-PE'),
-      alcance: alcance,
-      sede: (F.sede === 'TODAS' ? 'Todas las sedes' : F.sede),
-      registros: rows.length
-    };
-
-    /* Escapar "<" evita que una observación escrita en planta que contenga
-       una etiqueta de cierre de script corte el HTML del archivo generado. */
-    const seguro = o => JSON.stringify(o).replace(/</g, '\\u003c');
-
-    src = src.replace(/const DATOS_EMBEBIDOS = [\s\S]*?\/\*__DATOS__\*\//,
-                      'const DATOS_EMBEBIDOS = ' + seguro(rows) + '; /*__DATOS__*/');
-    src = src.replace(/const META_EXPORT = [\s\S]*?\/\*__META__\*\//,
-                      'const META_EXPORT = ' + seguro(meta) + '; /*__META__*/');
-    /* El archivo entregado no lleva la URL del Sheet: el cliente no debe poder
-       consultar ni escribir en la base de LIVES. */
+    const meta = {generado: new Date().toLocaleString('es-PE'), fabrica: F.fab, registros: rows.length};
+    /* Escapar "<" impide que una observación escrita en planta corte el HTML generado. */
+    const seg = o => JSON.stringify(o).replace(/</g, '\\u003c');
+    src = src.replace(/const DATOS_EMBEBIDOS = [\s\S]*?\/\*__DATOS__\*\//, 'const DATOS_EMBEBIDOS = ' + seg(rows) + '; /*__DATOS__*/');
+    src = src.replace(/const ITEMS_EMBEBIDOS = [\s\S]*?\/\*__ITEMS__\*\//, 'const ITEMS_EMBEBIDOS = ' + seg(ITEMS.filter(i => !i.sede || i.sede === F.fab)) + '; /*__ITEMS__*/');
+    src = src.replace(/const META_EXPORT = [\s\S]*?\/\*__META__\*\//, 'const META_EXPORT = ' + seg(meta) + '; /*__META__*/');
+    /* La copia entregada no lleva la URL del Sheet de LIVES. */
     src = src.replace(/const API = '[^']*'/, "const API = 'SIN_CONEXION_COPIA_ESTATICA'");
 
-    const nombre = 'LIVES_Orden_Limpieza_' +
-      alcance.replace(/[^0-9A-Za-z]+/g,'_') +
-      (F.sede === 'TODAS' ? '' : '_' + F.sede.replace(/[^0-9A-Za-z]+/g,'_')) + '.html';
-
-    const url = URL.createObjectURL(new Blob([src], {type:'text/html;charset=utf-8'}));
     const a = document.createElement('a');
-    a.href = url; a.download = nombre; document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
-  }catch(e){
-    alert('No se pudo generar el archivo: ' + e.message);
-  }finally{
-    btn.textContent = txtOrig; btn.disabled = false;
-  }
+    a.href = URL.createObjectURL(new Blob([src], {type:'text/html;charset=utf-8'}));
+    a.download = 'LIVES_Orden_Limpieza_' + F.fab.replace(/[^0-9A-Za-z]+/g,'_') + '.html';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }catch(e){ alert('No se pudo generar el archivo: ' + e.message); }
+  finally{ btn.textContent = txt; btn.disabled = false; }
 }
 
-/* ---------- modo copia estática ---------- */
-function aplicarModoExportado(){
+function modoExportado(){
   if(!ES_EXPORTADO) return;
   $('btnRef').style.display = 'none';
   $('btnExp').style.display = 'none';
   $('hsub').textContent = 'Copia estática para revisión externa · datos congelados';
   const m = META_EXPORT || {};
-  $('selloExp').innerHTML =
-    '<b>Reporte estático.</b> Generado el ' + esc(m.generado || '—') + ' desde el sistema de LIVES. ' +
-    'Alcance: <b>' + esc(m.alcance || '—') + '</b> · <b>' + esc(m.sede || '—') + '</b> · ' +
-    esc(String(m.registros || 0)) + ' registros. ' +
-    'Los filtros de arriba siguen funcionando, pero los datos no se actualizan: para ver el estado en vivo, ' +
-    'pide el acceso al dashboard conectado.';
+  $('selloExp').innerHTML = '<b>Reporte estático.</b> Generado el ' + esc(m.generado||'—') +
+    ' desde el sistema de LIVES · Fábrica ' + esc(m.fabrica||'—') + ' · ' + esc(String(m.registros||0)) +
+    ' registros. Los filtros y las estadísticas siguen funcionando, pero los datos no se actualizan.';
   $('selloExp').classList.remove('hide');
 }
 
 /* ---------- eventos ---------- */
-$('granSel').querySelectorAll('.mbtn').forEach(b => {
-  b.onclick = () => {
-    $('granSel').querySelectorAll('.mbtn').forEach(o => o.classList.remove('active'));
-    b.classList.add('active');
-    F.gran = b.dataset.g; F.periodo = 'TODOS'; F.comparar = false;
-    inicializarFiltros(); pintar();
-  };
-});
-$('selPeriodo').onchange = e => { F.periodo = e.target.value; pintar(); };
-$('selSede').onchange   = e => { F.sede = e.target.value; pintar(); };
-$('btnRef').onclick     = cargar;
-$('btnExp').onclick     = exportarHTML;
-$('btnPdf').onclick     = () => { document.body.classList.add('print-dash'); window.print(); setTimeout(() => document.body.classList.remove('print-dash'), 800); };
+$('selFab').onchange = e => { F.fab = e.target.value; pintarSemana(); };
+$('selSem').onchange = e => { F.sem = e.target.value; inicializar(); };
+$('btnPrev').onclick = () => { const s = semanas(), i = s.indexOf(F.sem); if(i > 0){ F.sem = s[i-1]; inicializar(); } };
+$('btnNext').onclick = () => { const s = semanas(), i = s.indexOf(F.sem); if(i < s.length-1){ F.sem = s[i+1]; inicializar(); } };
+$('btnStats').onclick = abrirStats;
+$('btnCerrar').onclick = cerrarStats;
+$('modal').onclick = e => { if(e.target === $('modal')) cerrarStats(); };
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => mostrarTab(b.dataset.t));
+$('btnPdf').onclick = () => window.print();
+$('btnExp').onclick = exportarHTML;
+$('btnRef').onclick = cargar;
+document.addEventListener('keydown', e => { if(e.key === 'Escape') cerrarStats(); });
 
-aplicarModoExportado();
+modoExportado();
 cargar();
-if(!ES_EXPORTADO) setInterval(cargar, REFRESCO_SEG * 1000);
+if(!ES_EXPORTADO) setInterval(() => { if(!$('modal').classList.contains('show')) cargar(); }, REFRESCO_SEG * 1000);
 </script>
 </body>
 </html>
