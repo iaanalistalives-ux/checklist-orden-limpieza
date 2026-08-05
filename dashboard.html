@@ -42,9 +42,14 @@ body{margin:0;background:var(--warm-light);color:#333;font-family:Calibri,Arial,
 .hoja .meta{margin-left:auto;text-align:right;font-size:12.5px;color:#333;}
 .hoja .meta .mrow{margin-bottom:3px;}
 .hoja .meta b{color:var(--sage-dark);text-transform:uppercase;letter-spacing:.3px;}
-.leyenda{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--stone);margin-bottom:14px;align-items:center;}
-.leyenda i{display:inline-flex;align-items:center;gap:5px;font-style:normal;}
-.lg{width:18px;height:18px;border-radius:4px;display:inline-block;font-size:11px;font-weight:700;text-align:center;line-height:18px;}
+.leyenda{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--stone);margin-bottom:14px;align-items:center;}
+.leyenda i{display:inline-flex;align-items:center;gap:6px;font-style:normal;white-space:nowrap;}
+.lg{width:22px;min-width:22px;height:22px;border-radius:4px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;line-height:1;}
+.lg.lok{background:#E3F2EC;color:var(--sage-dark);border:1px solid #BFE3D6;}
+.lg.lx{background:#FBE4E4;color:var(--rose);border:1px solid #F3C0C0;}
+.lg.lna{background:#EEF2F3;color:var(--slate);border:1px solid #DCE3E6;font-size:9px;}
+.lg.lfa{background:#FDF3E2;color:var(--taupe);border:1px dashed #EBCF9E;}
+.lg.les{background:transparent;border:1px dashed var(--warm);}
 
 /* ---- Tabla semanal ---- */
 table.wk{width:100%;border-collapse:collapse;font-size:12.5px;}
@@ -129,12 +134,14 @@ table.rs td{padding:7px 10px;border-bottom:1px solid var(--warm-light);}
   @page{size:A4 portrait;margin:9mm;}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
   body{background:#fff!important;font-size:11px;}
-  .bar,.no-print,.modal{display:none!important;}
+  .bar,.no-print,.modal,.kpis{display:none!important;}
   .wrap{max-width:none;padding:0;}
   .header{padding:0 6px;min-height:56px;}
   .header .live{display:none;}
   .header img{height:34px;}
   .hoja,.ncbox{border:none;border-radius:0;padding:10px 0;margin-bottom:10px;}
+  .leyenda{font-size:10px;gap:12px;}
+  .lg{width:16px;min-width:16px;height:16px;font-size:9px;}
   .kpi{padding:9px 12px;}
   .kpi .v{font-size:20px;}.kpi.primary .v{font-size:24px;}
   table.wk{font-size:9.5px;}
@@ -145,6 +152,7 @@ table.rs td{padding:7px 10px;border-bottom:1px solid var(--warm-light);}
   table.wk tr,.kpi,.ncbox,tr.secrow{break-inside:avoid;page-break-inside:avoid;}
   thead{display:table-header-group;}
   tr.secrow{break-after:avoid;page-break-after:avoid;}
+  .hoja.salto{break-before:page;page-break-before:always;}
 }
 </style>
 </head>
@@ -179,35 +187,7 @@ table.rs td{padding:7px 10px;border-bottom:1px solid var(--warm-light);}
   </div>
 
   <div class="kpis" id="kpis"></div>
-
-  <div class="hoja" id="hoja">
-    <div class="hh">
-      <div>
-        <div class="ht">SE DEBE MANTENER EL ORDEN Y LIMPIEZA EN TODAS LAS ÁREAS</div>
-        <div class="hst">Marcar cada casilla con OK / X según corresponda · OK = se hizo · X = no se hizo</div>
-      </div>
-      <div class="meta">
-        <div class="mrow"><b>Semana:</b> <span id="mSem">—</span></div>
-        <div class="mrow"><b>Fábrica:</b> <span id="mFab">—</span></div>
-        <div class="mrow"><b>Auditor(es):</b> <span id="mAud">—</span></div>
-      </div>
-    </div>
-    <div class="leyenda">
-      <i><span class="lg c ok">✓</span> Se hizo</i>
-      <i><span class="lg c x">✗</span> No se hizo</i>
-      <i><span class="lg c na">–</span> No aplica</i>
-      <i><span class="lg c falta">!</span> Día pasado sin registrar</i>
-      <i><span class="lg c esp"></span> Aún no toca</i>
-    </div>
-    <div id="grilla"></div>
-  </div>
-
-  <div class="ncbox" id="ncbox">
-    <div class="pt" id="ncTitulo">No conformidades de la semana</div>
-    <div class="ph">Lo que se marcó X, con la observación que dejó el auditor en planta.</div>
-    <div id="ncCont"></div>
-  </div>
-
+  <div id="hojas"></div>
   <div class="note" id="notaMetodo"></div>
 </div>
 
@@ -395,8 +375,10 @@ function semanas(){
 function inicializar(){
   const fabs = fabricas();
   if(!fabs.length){ $('err').innerHTML = 'Todavía no hay datos ni catálogo. Envía el primer check list desde el celular.'; $('err').classList.add('show'); return; }
-  if(!F.fab || !fabs.includes(F.fab)) F.fab = fabs[0];
-  $('selFab').innerHTML = fabs.map(f => '<option value="'+esc(f)+'">'+esc(f)+'</option>').join('');
+  if(!F.fab || (F.fab !== 'TODAS' && fabs.indexOf(F.fab) < 0)) F.fab = fabs[0];
+  $('selFab').innerHTML =
+    fabs.map(f => '<option value="'+esc(f)+'">'+esc(f)+'</option>').join('') +
+    (fabs.length > 1 ? '<option value="TODAS">TODAS LAS FÁBRICAS</option>' : '');
   $('selFab').value = F.fab;
 
   const sems = semanas();
@@ -413,12 +395,14 @@ function inicializar(){
 }
 
 /* ---------- HOJA SEMANAL ---------- */
-function itemsDeFabrica(){
-  let its = ITEMS.filter(i => !i.sede || i.sede === F.fab);
+function fabsActivas(){ return F.fab === 'TODAS' ? fabricas() : [F.fab]; }
+
+function itemsDeFabrica(fab){
+  let its = ITEMS.filter(i => !i.sede || i.sede === fab);
   if(!its.length){
     /* Sin catálogo utilizable, la grilla se arma con lo que se haya registrado. */
     const vistos = new Map();
-    FILAS.filter(f => f.sede === F.fab).forEach(f => {
+    FILAS.filter(f => f.sede === fab).forEach(f => {
       const k = f.seccion + '||' + f.n;
       if(!vistos.has(k)) vistos.set(k, {sede:f.sede, seccion:f.seccion, orden:99, n:f.n, item:f.item});
     });
@@ -427,53 +411,88 @@ function itemsDeFabrica(){
   return its.sort((a,b) => (a.orden||99)-(b.orden||99) || a.n-b.n);
 }
 
+/* Columnas: lunes a viernes, más sábado/domingo solo si esa semana tiene datos.
+   Se calculan sobre TODAS las fábricas mostradas para que las tablas queden
+   alineadas entre sí cuando se ven apiladas. */
 function diasDeLaSemana(){
   const base = DIAS_SEM.slice(0,5);
-  const enSem = new Set(FILAS.filter(f => f.semanaEtq === F.sem && f.sede === F.fab).map(f => f.dia));
+  const fabs = fabsActivas();
+  const enSem = new Set(FILAS.filter(f => f.semanaEtq === F.sem && fabs.indexOf(f.sede) >= 0).map(f => f.dia));
   if(enSem.has('SÁBADO')) base.push('SÁBADO');
   if(enSem.has('DOMINGO')) base.push('DOMINGO');
   return base;
 }
 
 function pintarSemana(){
-  const its = itemsDeFabrica();
+  const fabs = fabsActivas();
   const dias = diasDeLaSemana();
   const lunes = lunesDe(F.sem);
   const hoy = hoyISO();
-  const rows = FILAS.filter(f => f.semanaEtq === F.sem && f.sede === F.fab);
+  const fechas = dias.map((d,i) => isoDe(masDias(lunes, i)));
+  const estado = fechas.map(f => f < hoy ? 'pasado' : (f === hoy ? 'hoy' : 'futuro'));
+  const todas = FILAS.filter(f => f.semanaEtq === F.sem && fabs.indexOf(f.sede) >= 0);
 
-  /* mapa: SECCION||N||DIA -> registro */
+  /* ---- KPIs: consolidados de lo que se está viendo ---- */
+  const t = contar(todas);
+  const diasReg = new Set(todas.map(r => r.dia)).size;
+  const diasPasados = dias.filter((d,i) => estado[i] === 'pasado');
+  const marcasPasadas = todas.filter(r => diasPasados.indexOf(r.dia) >= 0).length;
+  let itemsTotal = 0;
+  fabs.forEach(fb => { itemsTotal += itemsDeFabrica(fb).length; });
+  /* Pendientes = solo lo que falta de días YA cerrados. Contarlo contra toda la
+     semana haría que las marcas de hoy tapen un día pasado incompleto. */
+  const faltantes = Math.max(0, itemsTotal * diasPasados.length - marcasPasadas);
+  const diasEsperados = estado.filter(e => e === 'pasado' || e === 'hoy').length;
+  const totalEsperado = itemsTotal * Math.max(diasEsperados, 1);
+
+  $('kpis').innerHTML =
+    kpi(f1(t.pct), 'Cumplimiento de la semana', t.ok + ' OK de ' + t.ev + ' evaluados', 'primary') +
+    kpi(t.x, 'No conformidades', 'ítems marcados X', t.x ? 'bad' : '') +
+    kpi(diasReg + '/' + dias.length, 'Días registrados', 'de ' + dias.length + ' días de la semana',
+        diasReg < diasEsperados ? 'warn' : '') +
+    kpi(faltantes, 'Marcas pendientes', 'de días ya pasados', faltantes ? 'warn' : '') +
+    '<div class="kpi"><div class="v">' + itemsTotal + '</div><div class="l">Ítems del check list</div>' +
+    '<div class="s">' + (fabs.length > 1 ? fabs.length + ' fábricas' : fabs[0]) + '</div>' +
+    '<div class="pbar"><i style="width:' + (totalEsperado ? Math.min(100, todas.length*100/totalEsperado) : 0) + '%"></i></div></div>';
+
+  /* ---- una hoja por fábrica ---- */
+  $('hojas').innerHTML = fabs.map((fb, idx) => hojaHTML(fb, dias, estado, lunes, idx)).join('');
+
+  $('notaMetodo').innerHTML =
+    '<b>Cómo leer esta hoja:</b> % de cumplimiento = ítems OK ÷ (OK + X). Los <b>N/A</b> no entran al denominador. ' +
+    'Las celdas con <b>!</b> son días ya pasados sin registro: no cuentan como incumplimiento, cuentan como falta de auditoría. ' +
+    'Las celdas vacías son días que aún no llegan. La hoja se actualiza sola cada ' + REFRESCO_SEG + ' segundos ' +
+    'conforme el auditor va marcando desde el celular. ' +
+    (fabs.length > 1 ? 'Los KPIs de arriba son el consolidado de las ' + fabs.length + ' fábricas; cada hoja trae además su propio porcentaje. ' : '') +
+    'No hay meta definida por LIVES para este check list.';
+}
+
+function hojaHTML(fab, dias, estado, lunes, idx){
+  const its = itemsDeFabrica(fab);
+  const rows = FILAS.filter(f => f.semanaEtq === F.sem && f.sede === fab);
   const mapa = new Map();
   rows.forEach(r => mapa.set(r.seccion + '||' + r.n + '||' + r.dia, r));
 
-  /* fechas de cada columna y su estado temporal */
-  const fechas = dias.map((d,i) => isoDe(masDias(lunes, i)));
-  const estado = fechas.map(f => f < hoy ? 'pasado' : (f === hoy ? 'hoy' : 'futuro'));
-
-  /* cabecera del reporte */
-  $('mSem').textContent = 'N° ' + (+F.sem.split('-S')[1]) + '  ·  ' + rangoSemana(F.sem);
-  $('mFab').textContent = F.fab;
+  const c = contar(rows);
   const auds = [...new Set(rows.map(r => r.auditor).filter(Boolean))];
-  $('mAud').textContent = auds.length ? auds.join(', ') : '—';
 
-  /* ---- grilla ---- */
-  let html = '<table class="wk"><thead><tr>' +
+  const secs = [];
+  its.forEach(i => { if(secs.indexOf(i.seccion) < 0) secs.push(i.seccion); });
+
+  let tabla = '<table class="wk"><thead><tr>' +
     '<th class="iz" colspan="2" style="width:auto">ÍTEM</th>' +
     dias.map((d,i) => '<th class="' + (estado[i]==='hoy'?'hoy':'') + '">' + DIAS_COR[d] +
       '<small>' + ddmm(masDias(lunes,i)) + (estado[i]==='hoy'?' · hoy':'') + '</small></th>').join('') +
     '<th>%</th></tr></thead><tbody>';
 
-  const secs = [];
-  its.forEach(i => { if(!secs.includes(i.seccion)) secs.push(i.seccion); });
-
   secs.forEach(sec => {
     const isec = its.filter(i => i.seccion === sec);
     const csec = contar(rows.filter(r => r.seccion === sec));
-    html += '<tr class="secrow"><td colspan="' + (3 + dias.length) + '">' + esc(sec) +
+    tabla += '<tr class="secrow"><td colspan="' + (3 + dias.length) + '">' + esc(sec) +
       '<span class="cnt">' + (csec.ev ? f1(csec.pct) + ' · ' + csec.x + ' NC' : 'sin registros') + '</span></td></tr>';
 
     isec.forEach(it => {
-      let ok=0, x=0;
+      let ok = 0, x = 0;
       const celdas = dias.map((d,i) => {
         const r = mapa.get(it.seccion + '||' + it.n + '||' + d);
         let cls, txt;
@@ -482,48 +501,23 @@ function pintarSemana(){
           else if(r.res === 'X'){ cls='x'; txt='✗'; x++; }
           else { cls='na'; txt='N/A'; }
         }else{
-          if(estado[i] === 'futuro'){ cls='esp'; txt=''; }
-          else if(estado[i] === 'hoy'){ cls='esp'; txt=''; }
-          else { cls='falta'; txt='!'; }
+          if(estado[i] === 'pasado'){ cls='falta'; txt='!'; }
+          else { cls='esp'; txt=''; }
         }
-        const tip = r ? (r.res==='X' && r.obs ? ' title="'+esc(r.obs)+'"' : '') : '';
+        const tip = (r && r.res === 'X' && r.obs) ? ' title="' + esc(r.obs) + '"' : '';
         return '<td class="d ' + (estado[i]==='hoy'?'hoycol':'') + '"><span class="c ' + cls + '"' + tip + '>' + txt + '</span></td>';
       }).join('');
-      const p = pct(ok,x);
-      html += '<tr><td class="num">' + it.n + '</td><td class="itm">' + esc(it.item) + '</td>' + celdas +
+      const p = pct(ok, x);
+      tabla += '<tr><td class="num">' + it.n + '</td><td class="itm">' + esc(it.item) + '</td>' + celdas +
         '<td class="pc" style="color:' + (p===null?C.stone:(p<100?C.rose:C.sage)) + '">' + (p===null?'—':p.toFixed(0)+'%') + '</td></tr>';
     });
   });
-  html += '</tbody></table>';
-  $('grilla').innerHTML = html;
+  tabla += '</tbody></table>';
 
-  /* ---- KPIs de la semana ---- */
-  const t = contar(rows);
-  const diasReg = new Set(rows.map(r => r.dia)).size;
-  const diasEsperados = estado.filter(e => e === 'pasado' || e === 'hoy').length;
-  const totalEsperado = its.length * Math.max(diasEsperados,1);
-  /* Pendientes = solo lo que falta de días YA cerrados. Si se contara contra
-     todas las filas de la semana, las marcas de hoy taparían un día pasado
-     incompleto y el faltante saldría en cero. */
-  const diasPasados = dias.filter((d,i) => estado[i] === 'pasado');
-  const marcasPasadas = rows.filter(r => diasPasados.indexOf(r.dia) >= 0).length;
-  const faltantes = Math.max(0, its.length * diasPasados.length - marcasPasadas);
-
-  $('kpis').innerHTML =
-    kpi(f1(t.pct), 'Cumplimiento de la semana', t.ok + ' OK de ' + t.ev + ' evaluados', 'primary') +
-    kpi(t.x, 'No conformidades', 'ítems marcados X', t.x ? 'bad' : '') +
-    kpi(diasReg + '/' + dias.length, 'Días registrados', 'de ' + dias.length + ' días de la semana',
-        diasReg < diasEsperados ? 'warn' : '') +
-    kpi(faltantes, 'Marcas pendientes', 'de días ya pasados', faltantes ? 'warn' : '') +
-    '<div class="kpi"><div class="v">' + its.length + '</div><div class="l">Ítems del check list</div>' +
-    '<div class="s">' + secs.length + ' secciones</div>' +
-    '<div class="pbar"><i style="width:' + (totalEsperado ? Math.min(100, rows.length*100/totalEsperado) : 0) + '%"></i></div></div>';
-
-  /* ---- no conformidades ---- */
+  /* no conformidades de esta fábrica */
   const nc = rows.filter(r => r.res === 'X')
-    .sort((a,b) => a.fecha.localeCompare(b.fecha) || a.seccion.localeCompare(b.seccion) || a.n-b.n);
-  $('ncTitulo').textContent = 'No conformidades de la semana (' + nc.length + ')';
-  $('ncCont').innerHTML = nc.length
+    .sort((a,b) => a.fecha.localeCompare(b.fecha) || a.seccion.localeCompare(b.seccion) || a.n - b.n);
+  const ncHtml = nc.length
     ? '<table class="nc"><thead><tr><th>Día</th><th>Sección</th><th>N°</th><th>Ítem</th><th>Observación</th><th>Auditor</th></tr></thead><tbody>' +
       nc.map(r => '<tr><td class="dia">' + DIAS_COR[r.dia] + ' ' + r.fecha.slice(8,10) + '/' + r.fecha.slice(5,7) + '</td>' +
         '<td>' + esc(r.seccion) + '</td><td>' + r.n + '</td><td>' + esc(r.item) + '</td>' +
@@ -531,11 +525,27 @@ function pintarSemana(){
         '<td>' + esc(r.auditor) + '</td></tr>').join('') + '</tbody></table>'
     : '<div class="sinnc">✓ Sin no conformidades en la semana</div>';
 
-  $('notaMetodo').innerHTML =
-    '<b>Cómo leer esta hoja:</b> % de cumplimiento = ítems OK ÷ (OK + X). Los <b>N/A</b> no entran al denominador. ' +
-    'Las celdas con <b>!</b> son días ya pasados sin registro: no cuentan como incumplimiento, cuentan como falta de auditoría. ' +
-    'Las celdas vacías son días que aún no llegan. La hoja se actualiza sola cada ' + REFRESCO_SEG + ' segundos ' +
-    'conforme el auditor va marcando desde el celular. No hay meta definida por LIVES para este check list.';
+  return '<div class="hoja' + (idx > 0 ? ' salto' : '') + '">' +
+      '<div class="hh"><div>' +
+        '<div class="ht">SE DEBE MANTENER EL ORDEN Y LIMPIEZA EN TODAS LAS ÁREAS</div>' +
+        '<div class="hst">Marcar cada casilla con OK / X según corresponda · OK = se hizo · X = no se hizo</div>' +
+      '</div><div class="meta">' +
+        '<div class="mrow"><b>Semana:</b> N° ' + (+F.sem.split('-S')[1]) + '  ·  ' + rangoSemana(F.sem) + '</div>' +
+        '<div class="mrow"><b>Fábrica:</b> ' + esc(fab) + '</div>' +
+        '<div class="mrow"><b>Auditor(es):</b> ' + (auds.length ? esc(auds.join(', ')) : '—') + '</div>' +
+        '<div class="mrow"><b>Cumplimiento:</b> <span style="color:' + (c.pct!==null && c.pct<100 ? C.rose : C.sage) +
+          ';font-weight:700">' + f1(c.pct) + '</span>' + (c.x ? ' · ' + c.x + ' NC' : '') + '</div>' +
+      '</div></div>' +
+      '<div class="leyenda">' +
+        '<i><span class="lg lok">✓</span>Se hizo</i>' +
+        '<i><span class="lg lx">✗</span>No se hizo</i>' +
+        '<i><span class="lg lna">N/A</span>No aplica</i>' +
+        '<i><span class="lg lfa">!</span>Día pasado sin registrar</i>' +
+        '<i><span class="lg les"></span>Aún no toca</i>' +
+      '</div>' + tabla +
+      '<div class="ncbox"><div class="pt">No conformidades de la semana — ' + esc(fab) + ' (' + nc.length + ')</div>' +
+      '<div class="ph">Lo que se marcó X, con la observación que dejó el auditor en planta.</div>' + ncHtml + '</div>' +
+    '</div>';
 }
 
 function kpi(v,l,s,cls){
@@ -545,7 +555,7 @@ function kpi(v,l,s,cls){
 /* ---------- ESTADÍSTICAS (modal) ---------- */
 function abrirStats(){
   $('modal').classList.add('show');
-  $('mSub').textContent = 'Fábrica: ' + F.fab + ' · histórico completo · promedios ponderados (OK ÷ evaluados)';
+  $('mSub').textContent = (F.fab === 'TODAS' ? 'Todas las fábricas' : 'Fábrica: ' + F.fab) + ' · histórico completo · promedios ponderados (OK ÷ evaluados)';
   mostrarTab('sem');
 }
 function cerrarStats(){
@@ -563,7 +573,7 @@ function mostrarTab(t){
     if(t === 'anio') pintarStatsAnual();
   });
 }
-function baseStats(){ return FILAS.filter(f => f.sede === F.fab); }
+function baseStats(){ return F.fab === 'TODAS' ? FILAS.slice() : FILAS.filter(f => f.sede === F.fab); }
 
 function pintarStatsSemanal(){
   const base = baseStats();
@@ -718,8 +728,9 @@ function etiquetas(eje, suf){
 /* ---------- exportar copia interactiva ---------- */
 async function exportarHTML(){
   if(!FILAS.length) return alert('No hay datos para exportar.');
-  const rows = FILAS.filter(f => f.sede === F.fab);
-  if(!rows.length) return alert('Esta fábrica no tiene datos.');
+  const fabs = fabsActivas();
+  const rows = FILAS.filter(f => fabs.indexOf(f.sede) >= 0);
+  if(!rows.length) return alert('No hay datos para la selección actual.');
   const btn = $('btnExp'), txt = btn.textContent;
   btn.textContent = 'Generando…'; btn.disabled = true;
   try{
@@ -731,18 +742,19 @@ async function exportarHTML(){
       if(src.indexOf('/*__DATOS__*/') < 0) throw new Error('marcador ausente');
     }catch(e){ src = '<!DOCTYPE html>\n' + document.documentElement.outerHTML; }
 
-    const meta = {generado: new Date().toLocaleString('es-PE'), fabrica: F.fab, registros: rows.length};
+    const meta = {generado: new Date().toLocaleString('es-PE'),
+                  fabrica: (F.fab === 'TODAS' ? 'Todas las fábricas' : F.fab), registros: rows.length};
     /* Escapar "<" impide que una observación escrita en planta corte el HTML generado. */
     const seg = o => JSON.stringify(o).replace(/</g, '\\u003c');
     src = src.replace(/const DATOS_EMBEBIDOS = [\s\S]*?\/\*__DATOS__\*\//, 'const DATOS_EMBEBIDOS = ' + seg(rows) + '; /*__DATOS__*/');
-    src = src.replace(/const ITEMS_EMBEBIDOS = [\s\S]*?\/\*__ITEMS__\*\//, 'const ITEMS_EMBEBIDOS = ' + seg(ITEMS.filter(i => !i.sede || i.sede === F.fab)) + '; /*__ITEMS__*/');
+    src = src.replace(/const ITEMS_EMBEBIDOS = [\s\S]*?\/\*__ITEMS__\*\//, 'const ITEMS_EMBEBIDOS = ' + seg(ITEMS.filter(i => !i.sede || fabs.indexOf(i.sede) >= 0)) + '; /*__ITEMS__*/');
     src = src.replace(/const META_EXPORT = [\s\S]*?\/\*__META__\*\//, 'const META_EXPORT = ' + seg(meta) + '; /*__META__*/');
     /* La copia entregada no lleva la URL del Sheet de LIVES. */
     src = src.replace(/const API = '[^']*'/, "const API = 'SIN_CONEXION_COPIA_ESTATICA'");
 
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([src], {type:'text/html;charset=utf-8'}));
-    a.download = 'LIVES_Orden_Limpieza_' + F.fab.replace(/[^0-9A-Za-z]+/g,'_') + '.html';
+    a.download = 'LIVES_Orden_Limpieza_S' + (+F.sem.split('-S')[1]) + '_' + F.fab.replace(/[^0-9A-Za-z]+/g,'_') + '.html';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   }catch(e){ alert('No se pudo generar el archivo: ' + e.message); }
