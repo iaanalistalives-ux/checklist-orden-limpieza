@@ -6,7 +6,6 @@
 <title>LIVES · Orden y Limpieza — Dashboard en vivo</title>
 <link rel="icon" href="data:,">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --petrol:#0E3B36; --emer:#10B981; --sage:#0F7A5A; --sage-dark:#0B815E;
@@ -81,12 +80,22 @@ td.nc{color:var(--rose);font-weight:700;}
 .err.show{display:block;}
 .empty{background:#fff;border:1px dashed var(--warm);border-radius:10px;padding:40px 20px;text-align:center;color:var(--stone);font-size:14px;}
 .hide{display:none!important;}
+.printhead{display:none;}
 @media print{
   @page{size:A4 landscape;margin:10mm;}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
   body{background:#fff!important;}
   .no-print,.bar{display:none!important;}
-  body.print-dash .panel,body.print-dash .kpi,body.print-dash table,body.print-dash .cwrap,body.print-dash .kpanel{break-inside:avoid;page-break-inside:avoid;}
+  .header{padding:0 8px;min-height:60px;}
+  .header .live{display:none;}
+  .printhead{display:block;margin:14px 0 16px;padding-bottom:10px;border-bottom:2px solid var(--warm);}
+  .printhead .ph1{font-size:19px;font-weight:700;color:var(--petrol);}
+  .printhead .ph2{font-size:14px;font-weight:700;color:var(--sage-dark);margin-top:3px;}
+  .printhead .ph3{font-size:11px;color:var(--stone);margin-top:3px;}
+  body.print-dash .tscroll{max-height:none!important;overflow:visible!important;}
+  body.print-dash tr:hover td{background:transparent!important;}
+  body.print-dash .panel,body.print-dash .kpi,body.print-dash table tr,body.print-dash .cwrap,body.print-dash .kpanel,body.print-dash .icard{break-inside:avoid;page-break-inside:avoid;}
+  body.print-dash thead{display:table-header-group;}
   body.print-dash .sectitle{break-after:avoid;page-break-after:avoid;margin-top:6px;}
   body.print-dash canvas{max-width:100%!important;height:auto!important;}
 }
@@ -99,13 +108,21 @@ td.nc{color:var(--rose);font-weight:700;}
   <div class="divider"></div>
   <div>
     <div class="htitle">ORDEN Y LIMPIEZA — DASHBOARD EN VIVO</div>
-    <div class="hsub">Check list de fábrica · Chorrillos y Barranco</div>
+    <div class="hsub" id="hsub">Check list de fábrica · Chorrillos y Barranco</div>
   </div>
   <div class="live">Actualizado <b id="hora">—</b><br><span id="nfilas">—</span></div>
 </div>
 
 <div class="wrap">
   <div id="err" class="err"></div>
+  <div id="selloExp" class="note hide" style="border-left-color:var(--slate)"></div>
+
+  <!-- Cabecera que SOLO se ve en el PDF impreso -->
+  <div class="printhead" id="printhead">
+    <div class="ph1">Check list de orden y limpieza</div>
+    <div class="ph2" id="phPeriodo">—</div>
+    <div class="ph3" id="phGen">—</div>
+  </div>
 
   <!-- FILTROS -->
   <div class="bar no-print">
@@ -123,8 +140,8 @@ td.nc{color:var(--rose);font-weight:700;}
     <span class="lb">Sede</span>
     <select id="selSede"></select>
     <button class="btn" id="btnRef">↻ Actualizar</button>
-    <button class="btn pri" id="btnXls">⬇ Exportar</button>
-    <button class="btn" id="btnPrint">🖨 Imprimir</button>
+    <button class="btn pri" id="btnExp">⬇ Exportar dashboard</button>
+    <button class="btn" id="btnPdf">🖨 PDF</button>
   </div>
 
   <div id="vacio" class="empty hide">
@@ -204,6 +221,11 @@ td.nc{color:var(--rose);font-weight:700;}
 =================================================================== */
 const API = 'https://script.google.com/macros/s/AKfycbzP-DE7hsPEXoFr3QY6noIOMT-kUKrNXji5tRmjWBD-Ikdj-49vorfu9Z52xUDkbsv6/exec';
 const REFRESCO_SEG = 60;
+
+/* Al exportar, estas dos líneas se rellenan con los datos y quedan dentro del
+   archivo generado. Mientras valen null, el dashboard se conecta al Sheet en vivo. */
+const DATOS_EMBEBIDOS = null; /*__DATOS__*/
+const META_EXPORT = null; /*__META__*/
 /* =================================================================== */
 
 Chart.defaults.font.family = "Calibri, Arial, sans-serif";
@@ -245,7 +267,18 @@ function etiquetaGran(k, g){
 function nombreGran(g){ return {dia:'día', semana:'semana', mes:'mes', anio:'año'}[g]; }
 
 /* ---------- carga ---------- */
+const ES_EXPORTADO = (DATOS_EMBEBIDOS !== null);
+
 async function cargar(){
+  /* Archivo exportado: los datos ya vienen adentro, no se consulta nada. */
+  if(ES_EXPORTADO){
+    FILAS = DATOS_EMBEBIDOS;
+    $('hora').textContent = (META_EXPORT && META_EXPORT.generado) || '—';
+    $('nfilas').textContent = FILAS.length.toLocaleString('es-PE') + ' registros · copia estática';
+    inicializarFiltros();
+    pintar();
+    return;
+  }
   if(API.indexOf('PEGA_AQUI') === 0){
     return error('Falta configurar la URL del Apps Script en la constante <b>API</b> de este archivo.');
   }
@@ -623,68 +656,93 @@ function pintarComparativo(){
   }).join('');
 }
 
-/* ---------- exportar ---------- */
-function exportar(){
+/* ---------- exportar: HTML interactivo autocontenido ----------
+   Genera una copia de este mismo dashboard con los datos escritos adentro.
+   El archivo resultante se abre con doble clic, funciona sin internet y sin
+   acceso al Google Sheet, y conserva los filtros (día/semana/mes/año,
+   comparativo, sede) para que el cliente navegue por su cuenta. */
+async function exportarHTML(){
   if(!FILAS.length) return alert('No hay datos para exportar.');
-  const rows = F.comparar ? FILAS.filter(f => F.sede === 'TODAS' || f.sede === F.sede) : filtradas();
-  if(!rows.length) return alert('El período seleccionado no tiene datos.');
 
-  const wb = XLSX.utils.book_new();
-  const etq = F.comparar ? 'Todos los años' : (F.periodo === 'TODOS' ? 'Año ' + F.anio : F.periodo);
+  /* Alcance: se respeta la sede elegida y el año en curso de la vista, pero NO
+     el período fino: si exportara solo una semana, el cliente no podría cambiar
+     de granularidad y el archivo dejaría de ser interactivo. */
+  const rows = FILAS.filter(f => {
+    if(F.sede !== 'TODAS' && f.sede !== F.sede) return false;
+    if(!F.comparar && F.gran !== 'anio' && f.anio !== F.anio) return false;
+    return true;
+  });
+  if(!rows.length) return alert('El filtro actual no tiene datos que exportar.');
 
-  /* 1. Portada */
-  const t = contar(rows);
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
-    ['LIVES — CHECK LIST DE ORDEN Y LIMPIEZA'],
-    ['Reporte para observador / auditoría externa'],
-    [],
-    ['Período', etq],
-    ['Sede', F.sede === 'TODAS' ? 'Todas' : F.sede],
-    ['Generado', new Date().toLocaleString('es-PE')],
-    [],
-    ['% Cumplimiento', t.pct === null ? 'sin datos' : +(t.pct.toFixed(2))],
-    ['Ítems OK', t.ok],
-    ['No conformidades (X)', t.x],
-    ['N/A (excluidos del %)', t.na],
-    ['Ítems evaluados (OK + X)', t.ev],
-    ['Check lists realizados', t.aud],
-    [],
-    ['Metodología', '% Cumplimiento = OK / (OK + X). Los N/A se excluyen del denominador. Los promedios por sección, día y sede son ponderados (suma de OK / suma de evaluados), no promedio de porcentajes.']
-  ]), 'Resumen');
+  const btn = $('btnExp');
+  const txtOrig = btn.textContent;
+  btn.textContent = 'Generando…'; btn.disabled = true;
 
-  /* 2. Resúmenes por granularidad */
-  const resumen = (titulo, keyFn, etqFn) => {
-    const m = agrupar(rows, keyFn);
-    const ks = [...m.keys()].sort();
-    const aoa = [[titulo,'Check lists','Ítems evaluados','OK','No conformidades','N/A','% Cumplimiento']];
-    ks.forEach(k => { const c = contar(m.get(k));
-      aoa.push([etqFn ? etqFn(k) : k, c.aud, c.ev, c.ok, c.x, c.na, c.pct === null ? '' : +(c.pct.toFixed(2))]); });
-    return XLSX.utils.aoa_to_sheet(aoa);
-  };
-  XLSX.utils.book_append_sheet(wb, resumen('Fecha', r => r.fecha), 'Por día');
-  XLSX.utils.book_append_sheet(wb, resumen('Semana', r => r.semanaEtq), 'Por semana');
-  XLSX.utils.book_append_sheet(wb, resumen('Mes', r => r.anio + '-' + String(r.mes).padStart(2,'0'), k => MESES[+k.split('-')[1]-1] + ' ' + k.split('-')[0]), 'Por mes');
-  XLSX.utils.book_append_sheet(wb, resumen('Año', r => r.anio), 'Por año');
-  XLSX.utils.book_append_sheet(wb, resumen('Día de semana', r => r.dia), 'Por día semana');
-  XLSX.utils.book_append_sheet(wb, resumen('Sede', r => r.sede), 'Por sede');
-  XLSX.utils.book_append_sheet(wb, resumen('Sección', r => r.seccion), 'Por sección');
+  try{
+    /* Se toma el código fuente original del archivo, no el DOM ya pintado. */
+    let src;
+    try{
+      const r = await fetch(location.href, {cache:'no-store'});
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      src = await r.text();
+      if(src.indexOf('/*__DATOS__*/') < 0) throw new Error('marcador ausente');
+    }catch(e){
+      src = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    }
 
-  /* 3. No conformidades */
-  const nc = rows.filter(r => r.res === 'X').sort((a,b) => a.fecha.localeCompare(b.fecha));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(
-    [['Fecha','Día','Semana','Mes','Año','Sede','Sección','N°','Ítem','Observación','Auditor']].concat(
-      nc.map(r => [r.fecha, r.dia, r.semanaEtq, r.mes, r.anio, r.sede, r.seccion, r.n, r.item, r.obs, r.auditor]))
-  ), 'No conformidades');
+    const alcance =
+      (F.comparar || F.gran === 'anio')
+        ? 'Todos los años (' + [...new Set(rows.map(f => f.anio))].sort().join(', ') + ')'
+        : 'Año ' + F.anio;
+    const meta = {
+      generado: new Date().toLocaleString('es-PE'),
+      alcance: alcance,
+      sede: (F.sede === 'TODAS' ? 'Todas las sedes' : F.sede),
+      registros: rows.length
+    };
 
-  /* 4. Detalle completo */
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(
-    [['ID auditoría','Fecha','Día','Semana','Mes','Año','Sede','Auditor','Sección','N°','Ítem','Resultado','Observación']].concat(
-      rows.map(r => [r.id, r.fecha, r.dia, r.semanaEtq, r.mes, r.anio, r.sede, r.auditor, r.seccion, r.n, r.item, r.res, r.obs]))
-  ), 'Detalle');
+    /* Escapar "<" evita que una observación escrita en planta que contenga
+       una etiqueta de cierre de script corte el HTML del archivo generado. */
+    const seguro = o => JSON.stringify(o).replace(/</g, '\\u003c');
 
-  const nom = 'LIVES_Orden_Limpieza_' + etq.replace(/[^0-9A-Za-zÁÉÍÓÚñÑ]+/g,'_') +
-    (F.sede === 'TODAS' ? '' : '_' + F.sede) + '.xlsx';
-  XLSX.writeFile(wb, nom);
+    src = src.replace(/const DATOS_EMBEBIDOS = [\s\S]*?\/\*__DATOS__\*\//,
+                      'const DATOS_EMBEBIDOS = ' + seguro(rows) + '; /*__DATOS__*/');
+    src = src.replace(/const META_EXPORT = [\s\S]*?\/\*__META__\*\//,
+                      'const META_EXPORT = ' + seguro(meta) + '; /*__META__*/');
+    /* El archivo entregado no lleva la URL del Sheet: el cliente no debe poder
+       consultar ni escribir en la base de LIVES. */
+    src = src.replace(/const API = '[^']*'/, "const API = 'SIN_CONEXION_COPIA_ESTATICA'");
+
+    const nombre = 'LIVES_Orden_Limpieza_' +
+      alcance.replace(/[^0-9A-Za-z]+/g,'_') +
+      (F.sede === 'TODAS' ? '' : '_' + F.sede.replace(/[^0-9A-Za-z]+/g,'_')) + '.html';
+
+    const url = URL.createObjectURL(new Blob([src], {type:'text/html;charset=utf-8'}));
+    const a = document.createElement('a');
+    a.href = url; a.download = nombre; document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }catch(e){
+    alert('No se pudo generar el archivo: ' + e.message);
+  }finally{
+    btn.textContent = txtOrig; btn.disabled = false;
+  }
+}
+
+/* ---------- modo copia estática ---------- */
+function aplicarModoExportado(){
+  if(!ES_EXPORTADO) return;
+  $('btnRef').style.display = 'none';
+  $('btnExp').style.display = 'none';
+  $('hsub').textContent = 'Copia estática para revisión externa · datos congelados';
+  const m = META_EXPORT || {};
+  $('selloExp').innerHTML =
+    '<b>Reporte estático.</b> Generado el ' + esc(m.generado || '—') + ' desde el sistema de LIVES. ' +
+    'Alcance: <b>' + esc(m.alcance || '—') + '</b> · <b>' + esc(m.sede || '—') + '</b> · ' +
+    esc(String(m.registros || 0)) + ' registros. ' +
+    'Los filtros de arriba siguen funcionando, pero los datos no se actualizan: para ver el estado en vivo, ' +
+    'pide el acceso al dashboard conectado.';
+  $('selloExp').classList.remove('hide');
 }
 
 /* ---------- eventos ---------- */
@@ -699,11 +757,12 @@ $('granSel').querySelectorAll('.mbtn').forEach(b => {
 $('selPeriodo').onchange = e => { F.periodo = e.target.value; pintar(); };
 $('selSede').onchange   = e => { F.sede = e.target.value; pintar(); };
 $('btnRef').onclick     = cargar;
-$('btnXls').onclick     = exportar;
-$('btnPrint').onclick   = () => { document.body.classList.add('print-dash'); window.print(); setTimeout(() => document.body.classList.remove('print-dash'), 800); };
+$('btnExp').onclick     = exportarHTML;
+$('btnPdf').onclick     = () => { document.body.classList.add('print-dash'); window.print(); setTimeout(() => document.body.classList.remove('print-dash'), 800); };
 
+aplicarModoExportado();
 cargar();
-setInterval(cargar, REFRESCO_SEG * 1000);
+if(!ES_EXPORTADO) setInterval(cargar, REFRESCO_SEG * 1000);
 </script>
 </body>
 </html>
