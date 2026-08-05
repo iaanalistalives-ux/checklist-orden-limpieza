@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es-PE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0E3B36">
+<title>LIVES · Check List de Orden y Limpieza</title>
+<link rel="icon" href="data:,">
+<style>
+:root{
+  --petrol:#0E3B36; --emer:#10B981; --sage:#0F7A5A; --sage-dark:#0B815E;
+  --slate:#4E6B78; --taupe:#B45309; --rose:#DC2626; --tan:#F59E0B;
+  --warm:#DCE5E2; --warm-light:#F1F6F4; --stone:#5F726C;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{margin:0;background:var(--warm-light);color:#333;font-family:Calibri,Arial,sans-serif;font-size:15px;line-height:1.4;padding-bottom:96px;}
+.header{background:var(--petrol);border-bottom:3px solid var(--emer);min-height:64px;display:flex;align-items:center;padding:10px 16px;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:30;}
+.header img{height:34px;display:block;}
+.divider{width:1px;height:30px;background:rgba(255,255,255,.35);}
+.htitle{color:#fff;font-size:15px;font-weight:700;letter-spacing:.3px;}
+.hsub{color:#F1F6F4;font-size:11.5px;}
+.wrap{max-width:760px;margin:0 auto;padding:16px 14px;}
+.card{background:#fff;border:1px solid var(--warm);border-radius:10px;padding:16px;margin-bottom:14px;}
+.card h2{font-size:14px;font-weight:700;color:var(--sage-dark);margin:0 0 12px;text-transform:uppercase;letter-spacing:.4px;}
+label{display:block;font-size:12px;font-weight:700;color:var(--stone);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;}
+input,select,textarea{width:100%;font-family:inherit;font-size:16px;color:#333;background:#fff;border:1.5px solid var(--warm);border-radius:8px;padding:11px 12px;outline:none;}
+input:focus,select:focus,textarea:focus{border-color:var(--sage);}
+.f{margin-bottom:14px;}
+.fechainfo{background:var(--warm-light);border-left:4px solid var(--sage);border-radius:0 6px 6px 0;padding:9px 12px;margin-top:8px;font-size:13px;color:#333;}
+.fechainfo b{color:var(--sage-dark);text-transform:uppercase;}
+.fechainfo .sub{font-size:11.5px;color:var(--stone);margin-top:2px;}
+.btn{display:block;width:100%;background:var(--sage);color:#fff;font-family:inherit;font-weight:700;font-size:15px;border:none;border-radius:8px;padding:14px;cursor:pointer;}
+.btn:active{background:var(--sage-dark);}
+.btn.sec{background:#fff;border:1.5px solid var(--warm);color:var(--sage);font-size:13px;padding:10px;}
+.btn[disabled]{opacity:.45;}
+.sec{background:#fff;border:1px solid var(--warm);border-radius:10px;margin-bottom:12px;overflow:hidden;}
+.sech{background:var(--sage);color:#fff;padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;}
+.sech .st{font-size:13.5px;font-weight:700;flex:1;line-height:1.25;}
+.sech .sc{font-size:11.5px;background:rgba(255,255,255,.2);border-radius:20px;padding:3px 9px;white-space:nowrap;}
+.sech .ar{font-size:12px;opacity:.9;}
+.secb{padding:4px 0;}
+.sec.cl .secb{display:none;}
+.allok{padding:8px 14px 10px;border-bottom:1px solid var(--warm-light);}
+.allok button{background:#fff;border:1.5px solid var(--warm);color:var(--stone);font-family:inherit;font-size:11.5px;font-weight:700;border-radius:6px;padding:7px 12px;cursor:pointer;}
+.it{padding:12px 14px;border-bottom:1px solid var(--warm-light);}
+.it:last-child{border-bottom:none;}
+.it .txt{font-size:13.5px;color:#333;line-height:1.35;margin-bottom:9px;}
+.it .txt b{color:var(--sage-dark);margin-right:5px;}
+.opts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
+.opt{font-family:inherit;font-size:14px;font-weight:700;border:1.5px solid var(--warm);background:#fff;color:var(--stone);border-radius:8px;padding:11px 4px;cursor:pointer;}
+.opt.ok.on{background:var(--sage);border-color:var(--sage);color:#fff;}
+.opt.x.on{background:var(--rose);border-color:var(--rose);color:#fff;}
+.opt.na.on{background:var(--slate);border-color:var(--slate);color:#fff;}
+.obs{margin-top:9px;display:none;}
+.obs.show{display:block;}
+.obs textarea{font-size:14px;min-height:62px;border-color:var(--rose);}
+.obs .lbl{font-size:11px;color:var(--rose);font-weight:700;text-transform:uppercase;margin-bottom:4px;letter-spacing:.4px;}
+.foot{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--warm);padding:10px 14px;z-index:40;box-shadow:0 -2px 10px rgba(0,0,0,.07);}
+.foot .in{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:12px;}
+.prog{flex:1;}
+.prog .pt{font-size:11.5px;color:var(--stone);font-weight:700;display:flex;justify-content:space-between;margin-bottom:4px;}
+.prog .pt b{color:var(--sage);font-size:14px;}
+.pbar{height:7px;background:var(--warm-light);border-radius:4px;overflow:hidden;}
+.pbar i{display:block;height:100%;background:var(--sage);width:0;transition:width .2s;}
+.foot .btn{width:auto;padding:13px 22px;flex:none;}
+.msg{border-radius:8px;padding:12px 14px;font-size:13px;margin-bottom:14px;display:none;}
+.msg.err{background:#FBE9E9;border:1px solid var(--rose);color:#B91C1C;}
+.msg.ok{background:#E8F5F0;border:1px solid var(--sage);color:var(--sage-dark);}
+.msg.warn{background:#FEF6E7;border:1px solid var(--tan);color:#92400E;}
+.msg.show{display:block;}
+.hide{display:none!important;}
+.done{text-align:center;padding:34px 20px;}
+.done .big{font-size:52px;color:var(--sage);line-height:1;}
+.done h2{font-size:19px;color:var(--sage-dark);margin:12px 0 6px;}
+.done p{font-size:13.5px;color:var(--stone);margin:0 0 6px;}
+.done .res{background:var(--warm-light);border-radius:10px;padding:14px;margin:16px 0;font-size:13px;color:#333;text-align:left;}
+.done .res div{margin-bottom:4px;}
+.pend{font-size:11.5px;color:var(--tan);font-weight:700;text-align:center;margin-top:8px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <img src="data:image/png;base64,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" alt="LIVES">
+  <div class="divider"></div>
+  <div>
+    <div class="htitle">CHECK LIST DE ORDEN Y LIMPIEZA</div>
+    <div class="hsub">Se debe mantener el orden y limpieza en todas las áreas</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div id="msg" class="msg"></div>
+
+  <!-- PASO 1: CABECERA -->
+  <div id="paso1">
+    <div class="card">
+      <h2>Datos de la auditoría</h2>
+
+      <div class="f">
+        <label for="fecha">Fecha de la auditoría</label>
+        <input type="date" id="fecha">
+        <div class="fechainfo" id="fechaInfo">—</div>
+      </div>
+
+      <div class="f">
+        <label for="sede">Sede / fábrica</label>
+        <select id="sede"><option value="">Cargando…</option></select>
+      </div>
+
+      <div class="f">
+        <label for="auditor">Auditor (quien revisa)</label>
+        <input type="text" id="auditor" placeholder="Nombre y apellido" autocomplete="name">
+      </div>
+
+      <button class="btn" id="btnIniciar">Iniciar check list</button>
+    </div>
+    <button class="btn sec" id="btnPend" style="display:none">Reintentar envíos pendientes</button>
+  </div>
+
+  <!-- PASO 2: ÍTEMS -->
+  <div id="paso2" class="hide">
+    <div class="card" style="padding:12px 16px">
+      <div style="font-size:12.5px;color:var(--stone)">
+        <b id="rSede" style="color:var(--sage-dark)"></b> · <span id="rFecha"></span>
+      </div>
+      <div style="font-size:11.5px;color:var(--stone);margin-top:2px">Auditor: <span id="rAuditor"></span></div>
+    </div>
+    <div id="secciones"></div>
+    <button class="btn sec" id="btnVolver">Cambiar datos de la auditoría</button>
+  </div>
+
+  <!-- PASO 3: CONFIRMACIÓN -->
+  <div id="paso3" class="hide">
+    <div class="card done">
+      <div class="big">✓</div>
+      <h2>Check list enviado</h2>
+      <p>Ya se ve en el dashboard en vivo.</p>
+      <div class="res" id="resumen"></div>
+      <button class="btn" id="btnNueva">Nueva auditoría</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot hide" id="foot">
+  <div class="in">
+    <div class="prog">
+      <div class="pt"><span id="pTxt">0 de 0 evaluados</span><b id="pPct">—</b></div>
+      <div class="pbar"><i id="pBar"></i></div>
+    </div>
+    <button class="btn" id="btnEnviar" disabled>Enviar</button>
+  </div>
+</div>
+
+<script>
+/* ===================================================================
+   CONFIGURACIÓN — lo único que tienes que editar
+   Pega aquí la URL /exec de tu implementación de Apps Script.
+=================================================================== */
+const API = 'https://script.google.com/macros/s/AKfycbzP-DE7hsPEXoFr3QY6noIOMT-kUKrNXji5tRmjWBD-Ikdj-49vorfu9Z52xUDkbsv6/exec';
+/* =================================================================== */
+
+const DIAS = ['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
+const MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+
+/* Catálogo de respaldo: si el Sheet no responde (sin señal, Apps Script caído),
+   el celular igual puede auditar. La fuente real es la hoja CATALOGO. */
+const CAT_FALLBACK = [
+["CHORRILLOS","ALMACEN DE TELA / CORTE",1,1,"TELAS RELAJADAS CON ETIQUETA EN LA MESA (TIEMPO DE INICIO Y FIN)"],
+["CHORRILLOS","ALMACEN DE TELA / CORTE",1,2,"EL TENDIDO DE TELAS DEBE SER POR COLOR, SEPARADOS COLORES CLAROS DE OSCUROS ANTES Y DESPUÉS DE CORTE DE PIEZAS"],
+["CHORRILLOS","ALMACEN DE TELA / CORTE",1,3,"REPORTE DE CALIBRACIÓN DE FUSIONADORA"],
+["CHORRILLOS","ALMACEN DE TELA / CORTE",1,4,"TIJERAS CON NOMBRE EN CORTE"],
+["CHORRILLOS","ALMACEN DE TELA / CORTE",1,5,"LAS TELAS E HILADOS ALMACENADOS TIENEN QUE ESTAR POR LO MENOS A 10CM DE LA PARED (NO PEGADAS) Y SOBRE PARIHUELAS (NO EN EL PISO)"],
+["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,1,"CADA LÍNEA DE COSTURA DEBE TENER EL PPS/MOCK UP APROBADO COLGADO"],
+["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,2,"BOTELLAS DE AGUA BIEN ETIQUETADAS Y EN SU LUGAR"],
+["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,3,"CERTIFICADO DE AGUJAS ROTAS EN ORDEN"],
+["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,4,"PIQUETERAS AMARRADAS"],
+["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,5,"PIQUETERAS CON NOMBRE"],
+["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,6,"EL MECÁNICO NO PUEDE DEJAR SUS HERRAMIENTAS EN LAS MÁQUINAS DE COSTURA, TIENE QUE TRASLADARSE CON ELLAS"],
+["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,7,"TIJERAS CON NOMBRE"],
+["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,8,"TIJERAS AMARRADAS"],
+["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,9,"PISOS LIMPIOS"],
+["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,10,"ABRE OJAL AMARRADO"],
+["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,11,"ENGARZADOR AMARRADO"],
+["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,12,"CUCHILLA AMARRADA Y CON NOMBRE"],
+["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,13,"ESTANTE O CAJA DONDE SE ALMACENEN LAS TIJERAS CORRECTAMENTE ETIQUETADAS"],
+["BARRANCO","ACABADOS",3,1,"CONTENEDORES ORDENADOS Y BIEN ETIQUETADOS (BENCINA, ALCOHOL)"],
+["BARRANCO","ACABADOS",3,2,"NO MEZCLAR COLORES CLAROS CON OSCUROS EN INSPECCIÓN O AUDITORÍA"],
+["BARRANCO","ACABADOS",3,3,"ESTANTE O CAJA DONDE SE ALMACENEN LAS TIJERAS CORRECTAMENTE ETIQUETADAS"],
+["BARRANCO","ACABADOS",3,4,"H-TAGS/STICKERS DEBEN PONERSE EN CAJAS X TALLA Y EMPACAR X TALLA"],
+["BARRANCO","DETECTOR DE METALES",4,1,"OPERARIO QUE REALIZA EL PROCESO DEL DETECTOR DE METALES NO DEBE TENER BOLSILLOS NI ACCESORIOS"],
+["BARRANCO","DETECTOR DE METALES",4,2,"REPORTE DE DETECTOR DE METALES PARA TODAS LAS ÓRDENES"],
+["BARRANCO","DETECTOR DE METALES",4,3,"MÁQUINA DETECTORA DE AGUJAS CALIBRADA CON 0.8 - 1"],
+["BARRANCO","DETECTOR DE METALES",4,4,"CAJA CON CANDADO PARA LAS PRENDAS QUE TENGAN REACCIÓN A AGUJAS EN LA MÁQUINA"],
+["BARRANCO","DETECTOR DE METALES",4,5,"OPERARIO QUE RECIBE LAS PRENDAS LUEGO DE DETECTOR TIENE QUE ESTAR CORRECTAMENTE UNIFORMADO (SIN BOLSILLOS NI ACCESORIOS)"],
+["BARRANCO","DETECTOR DE METALES",4,6,"EL ÁREA DE EMPAQUE LUEGO DEL DETECTOR DE METALES DEBE MANTENERSE CERRADA"],
+["BARRANCO","DETECTOR DE METALES",4,7,"CAJAS LUEGO DE AUDITADAS Y CERRADAS DEBEN MANTENERSE EN EL ÁREA CERRADA DE EMPAQUE"],
+["BARRANCO","AVÍOS",5,1,"LOS AVÍOS DEBEN ESTAR CORRECTAMENTE ALMACENADOS EN CAJAS/DEPÓSITOS, IDENTIFICADOS POR TIPO DE AVÍO/MARCA CLIENTE"],
+["BARRANCO","AVÍOS",5,2,"LAS ETIQUETAS DE MARCA DE THEORY / HELMUT LANG DEBEN ESTAR ALMACENADAS CON LLAVE"],
+["BARRANCO","AVÍOS",5,3,"MANTENER EL ALMACÉN DE AVÍOS ORDENADO"],
+["BARRANCO","OTROS",6,1,"LUGAR DONDE SE ALMACENAN SALDOS Y SEGUNDAS DEBE SER CERRADO Y CON LLAVE, INDICANDO ESTILO/PO/AÑO/CLIENTE"],
+["BARRANCO","OTROS",6,2,"LOS SALDOS Y SEGUNDAS DEBEN TENER PACKING LIST PEGADO AFUERA DE LAS CAJAS"]
+].map(r => ({sede:r[0], seccion:r[1], orden:r[2], n:r[3], item:r[4]}));
+
+let CATALOGO = CAT_FALLBACK.slice();
+let ITEMS = [];        // ítems de la sede elegida
+let RESP  = {};        // clave -> {res, obs}
+const $ = id => document.getElementById(id);
+
+/* ---------- Fecha: día de la semana + semana ISO ---------- */
+function semanaISO(f){
+  const p = f.split('-');
+  const d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2]));
+  const dia = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dia);
+  const ini = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+  return { semana: Math.ceil((((d - ini)/86400000)+1)/7), anioISO: d.getUTCFullYear() };
+}
+function partes(f){
+  const p = f.split('-');
+  const local = new Date(+p[0], +p[1]-1, +p[2]);
+  const iso = semanaISO(f);
+  return {
+    fecha:f, anio:+p[0], mes:+p[1], dia:+p[2],
+    diaSemana: DIAS[local.getDay()],
+    mesNombre: MESES[+p[1]-1],
+    semana: iso.semana, anioISO: iso.anioISO,
+    semanaEtq: iso.anioISO + '-S' + String(iso.semana).padStart(2,'0')
+  };
+}
+function hoyISO(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function pintarFecha(){
+  const f = $('fecha').value;
+  if(!f){ $('fechaInfo').innerHTML = '—'; return; }
+  const p = partes(f);
+  const finde = (p.diaSemana === 'SÁBADO' || p.diaSemana === 'DOMINGO');
+  $('fechaInfo').innerHTML =
+    '<b>' + p.diaSemana + '</b> ' + p.dia + ' de ' + p.mesNombre.toLowerCase() + ' de ' + p.anio +
+    '<div class="sub">Semana ' + p.semana + ' del ' + p.anioISO + ' (' + p.semanaEtq + ') · Mes ' + p.mesNombre +
+    (finde ? ' · <b style="color:#B45309">Fin de semana</b>' : '') + '</div>';
+}
+
+function msg(txt, tipo){
+  const m = $('msg');
+  m.className = 'msg show ' + (tipo || 'err');
+  m.innerHTML = txt;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function limpiarMsg(){ $('msg').className = 'msg'; }
+
+/* ---------- Catálogo ---------- */
+async function cargarCatalogo(){
+  try{
+    const r = await fetch(API + '?action=catalogo', {method:'GET'});
+    const j = await r.json();
+    if(j.ok && j.items && j.items.length){ CATALOGO = j.items; }
+  }catch(e){
+    msg('No se pudo leer el catálogo del Sheet. Se usará la lista guardada en el equipo — igual puedes auditar y enviar.', 'warn');
+  }
+  llenarSedes();
+}
+function llenarSedes(){
+  const sedes = [...new Set(CATALOGO.map(i => i.sede))].sort();
+  const s = $('sede'), prev = localStorage.getItem('lives_sede') || '';
+  s.innerHTML = '<option value="">Selecciona la sede…</option>' +
+    sedes.map(x => '<option value="'+x+'">'+x+'</option>').join('');
+  if(prev && sedes.includes(prev)) s.value = prev;
+}
+
+/* ---------- Render de ítems ---------- */
+function clave(it){ return it.seccion + '||' + it.n; }
+
+function iniciar(){
+  const f = $('fecha').value, sede = $('sede').value, aud = $('auditor').value.trim();
+  if(!f)   return msg('Falta la fecha de la auditoría.');
+  if(!sede) return msg('Falta elegir la sede.');
+  if(!aud)  return msg('Falta el nombre del auditor.');
+  limpiarMsg();
+  localStorage.setItem('lives_sede', sede);
+  localStorage.setItem('lives_auditor', aud);
+
+  ITEMS = CATALOGO.filter(i => i.sede === sede)
+                  .sort((a,b) => a.orden - b.orden || a.n - b.n);
+  if(!ITEMS.length) return msg('La sede ' + sede + ' no tiene ítems activos en el catálogo.');
+
+  const p = partes(f);
+  $('rSede').textContent = sede;
+  $('rFecha').textContent = p.diaSemana + ' ' + p.dia + '/' + String(p.mes).padStart(2,'0') + '/' + p.anio + ' · Semana ' + p.semana;
+  $('rAuditor').textContent = aud;
+
+  const borr = leerBorrador();
+  RESP = (borr && borr.sede === sede && borr.fecha === f) ? borr.resp : {};
+
+  renderSecciones();
+  $('paso1').classList.add('hide');
+  $('paso2').classList.remove('hide');
+  $('foot').classList.remove('hide');
+  actualizarProgreso();
+  window.scrollTo(0,0);
+}
+
+function renderSecciones(){
+  const cont = $('secciones');
+  const secs = [];
+  ITEMS.forEach(i => { if(!secs.find(s => s.n === i.seccion)) secs.push({n:i.seccion, orden:i.orden}); });
+
+  cont.innerHTML = secs.map((s, si) => {
+    const its = ITEMS.filter(i => i.seccion === s.n);
+    return '<div class="sec" id="sec'+si+'">' +
+      '<div class="sech" onclick="toggleSec('+si+')">' +
+        '<div class="st">'+s.n+'</div>' +
+        '<div class="sc" id="sc'+si+'">0/'+its.length+'</div>' +
+        '<div class="ar" id="ar'+si+'">▾</div>' +
+      '</div>' +
+      '<div class="secb">' +
+        '<div class="allok"><button type="button" onclick="marcarTodo('+si+')">Marcar toda la sección OK</button></div>' +
+        its.map(it => {
+          const k = clave(it), r = RESP[k] || {};
+          return '<div class="it" data-sec="'+si+'">' +
+            '<div class="txt"><b>'+it.n+'.</b>'+esc(it.item)+'</div>' +
+            '<div class="opts">' +
+              '<button type="button" class="opt ok'+(r.res==='OK'?' on':'')+'" data-k="'+esc(k)+'" data-v="OK" onclick="marcar(this)">OK</button>' +
+              '<button type="button" class="opt x'+(r.res==='X'?' on':'')+'" data-k="'+esc(k)+'" data-v="X" onclick="marcar(this)">X</button>' +
+              '<button type="button" class="opt na'+(r.res==='NA'?' on':'')+'" data-k="'+esc(k)+'" data-v="NA" onclick="marcar(this)">N/A</button>' +
+            '</div>' +
+            '<div class="obs'+(r.res==='X'?' show':'')+'">' +
+              '<div class="lbl">¿Qué se encontró? (observación)</div>' +
+              '<textarea data-obs="'+esc(k)+'" oninput="guardarObs(this)" placeholder="Describe el hallazgo y dónde">'+esc(r.obs||'')+'</textarea>' +
+            '</div>' +
+          '</div>';
+        }).join('') +
+      '</div></div>';
+  }).join('');
+  secs.forEach((s,si) => contarSec(si));
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toggleSec(si){
+  const el = $('sec'+si);
+  el.classList.toggle('cl');
+  $('ar'+si).textContent = el.classList.contains('cl') ? '▸' : '▾';
+}
+function marcar(btn){
+  const k = btn.dataset.k, v = btn.dataset.v;
+  const cont = btn.closest('.it');
+  cont.querySelectorAll('.opt').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  RESP[k] = RESP[k] || {};
+  RESP[k].res = v;
+  const obs = cont.querySelector('.obs');
+  if(v === 'X'){ obs.classList.add('show'); }
+  else { obs.classList.remove('show'); RESP[k].obs = ''; cont.querySelector('textarea').value = ''; }
+  contarSec(+cont.dataset.sec);
+  actualizarProgreso();
+  guardarBorrador();
+}
+function guardarObs(ta){
+  const k = ta.dataset.obs;
+  RESP[k] = RESP[k] || {};
+  RESP[k].obs = ta.value;
+  guardarBorrador();
+}
+function marcarTodo(si){
+  document.querySelectorAll('.it[data-sec="'+si+'"]').forEach(it => {
+    const b = it.querySelector('.opt.ok');
+    if(!it.querySelector('.opt.on')) b.click();
+  });
+}
+function contarSec(si){
+  const its = document.querySelectorAll('.it[data-sec="'+si+'"]');
+  let n = 0; its.forEach(i => { if(i.querySelector('.opt.on')) n++; });
+  const el = $('sc'+si);
+  if(el){ el.textContent = n + '/' + its.length; }
+}
+function actualizarProgreso(){
+  const total = ITEMS.length;
+  let ev = 0, ok = 0, x = 0;
+  ITEMS.forEach(it => {
+    const r = RESP[clave(it)];
+    if(r && r.res){ ev++; if(r.res==='OK') ok++; if(r.res==='X') x++; }
+  });
+  const base = ok + x;
+  $('pTxt').textContent = ev + ' de ' + total + ' evaluados' + (x ? ' · ' + x + ' NC' : '');
+  $('pPct').textContent = base ? (ok*100/base).toFixed(0) + '%' : '—';
+  $('pBar').style.width = (ev*100/total) + '%';
+  $('btnEnviar').disabled = (ev < total);
+  $('btnEnviar').textContent = (ev < total) ? 'Faltan ' + (total-ev) : 'Enviar';
+}
+
+/* ---------- Borrador local ---------- */
+function guardarBorrador(){
+  localStorage.setItem('lives_borrador', JSON.stringify({
+    fecha:$('fecha').value, sede:$('sede').value, auditor:$('auditor').value.trim(), resp:RESP
+  }));
+}
+function leerBorrador(){
+  try{ return JSON.parse(localStorage.getItem('lives_borrador') || 'null'); }catch(e){ return null; }
+}
+
+/* ---------- Envío ---------- */
+function uuid(){
+  return 'A-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,9);
+}
+
+async function enviar(){
+  const fecha = $('fecha').value, sede = $('sede').value, aud = $('auditor').value.trim();
+  const faltanObs = ITEMS.filter(it => {
+    const r = RESP[clave(it)];
+    return r && r.res === 'X' && !(r.obs || '').trim();
+  });
+  if(faltanObs.length){
+    if(!confirm('Hay ' + faltanObs.length + ' ítem(s) marcados X sin observación.\n\nSin descripción del hallazgo, el reporte no le sirve al observador.\n\n¿Enviar igual?')) return;
+  }
+
+  const p = partes(fecha);
+  const payload = {
+    id: uuid(), fecha: fecha, sede: sede, auditor: aud,
+    respuestas: ITEMS.map(it => {
+      const r = RESP[clave(it)] || {};
+      return {seccion: it.seccion, n: it.n, item: it.item, res: r.res || 'NA', obs: (r.obs||'').trim()};
+    })
+  };
+
+  $('btnEnviar').disabled = true;
+  $('btnEnviar').textContent = 'Enviando…';
+  const r = await postar(payload);
+  if(r.ok){
+    localStorage.removeItem('lives_borrador');
+    mostrarResumen(payload, p, r.pendiente);
+  }else{
+    encolar(payload);
+    msg('No se pudo enviar (' + r.error + '). El check list quedó <b>guardado en el celular</b>: al recuperar señal, entra otra vez y toca "Reintentar envíos pendientes".', 'warn');
+    $('btnEnviar').disabled = false;
+    $('btnEnviar').textContent = 'Reintentar';
+  }
+}
+
+async function postar(payload){
+  try{
+    // Content-Type text/plain evita el preflight CORS que Apps Script no responde.
+    const r = await fetch(API, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    const j = await r.json();
+    if(j.ok) return {ok:true};
+    return {ok:false, error: j.error || 'respuesta inválida'};
+  }catch(e){
+    return {ok:false, error: e.message || 'sin conexión'};
+  }
+}
+
+function encolar(p){
+  const q = JSON.parse(localStorage.getItem('lives_cola') || '[]');
+  if(!q.find(x => x.id === p.id)) q.push(p);
+  localStorage.setItem('lives_cola', JSON.stringify(q));
+}
+async function reintentar(){
+  let q = JSON.parse(localStorage.getItem('lives_cola') || '[]');
+  if(!q.length) return msg('No hay envíos pendientes.', 'ok');
+  $('btnPend').disabled = true; $('btnPend').textContent = 'Enviando…';
+  const quedan = [];
+  for(const p of q){
+    const r = await postar(p);
+    if(!r.ok) quedan.push(p);
+  }
+  localStorage.setItem('lives_cola', JSON.stringify(quedan));
+  $('btnPend').disabled = false;
+  verPendientes();
+  msg(quedan.length ? 'Quedan ' + quedan.length + ' pendientes. Revisa la señal.' : 'Todos los pendientes se enviaron.', quedan.length ? 'warn' : 'ok');
+}
+function verPendientes(){
+  const q = JSON.parse(localStorage.getItem('lives_cola') || '[]');
+  const b = $('btnPend');
+  if(q.length){ b.style.display = 'block'; b.textContent = 'Reintentar ' + q.length + ' envío(s) pendiente(s)'; }
+  else { b.style.display = 'none'; }
+}
+
+function mostrarResumen(payload, p, pendiente){
+  let ok=0, x=0, na=0;
+  payload.respuestas.forEach(r => { if(r.res==='OK') ok++; else if(r.res==='X') x++; else na++; });
+  const base = ok + x;
+  $('resumen').innerHTML =
+    '<div><b>Fecha:</b> ' + p.diaSemana + ' ' + p.dia + '/' + String(p.mes).padStart(2,'0') + '/' + p.anio + '</div>' +
+    '<div><b>Semana:</b> ' + p.semana + ' (' + p.semanaEtq + ') · <b>Mes:</b> ' + p.mesNombre + '</div>' +
+    '<div><b>Sede:</b> ' + payload.sede + ' · <b>Auditor:</b> ' + esc(payload.auditor) + '</div>' +
+    '<div style="margin-top:8px"><b>Cumplimiento:</b> <span style="color:var(--sage);font-weight:700;font-size:17px">' +
+      (base ? (ok*100/base).toFixed(1) + '%' : '—') + '</span></div>' +
+    '<div>OK: ' + ok + ' · No conformidades: <b style="color:var(--rose)">' + x + '</b> · N/A: ' + na + '</div>';
+  $('paso2').classList.add('hide');
+  $('foot').classList.add('hide');
+  $('paso3').classList.remove('hide');
+  limpiarMsg();
+  window.scrollTo(0,0);
+}
+
+/* ---------- Init ---------- */
+$('fecha').value = hoyISO();
+pintarFecha();
+$('fecha').addEventListener('change', () => { pintarFecha(); guardarBorrador(); });
+$('auditor').value = localStorage.getItem('lives_auditor') || '';
+$('btnIniciar').onclick = iniciar;
+$('btnEnviar').onclick = enviar;
+$('btnPend').onclick = reintentar;
+$('btnVolver').onclick = () => {
+  $('paso2').classList.add('hide'); $('foot').classList.add('hide');
+  $('paso1').classList.remove('hide'); window.scrollTo(0,0);
+};
+$('btnNueva').onclick = () => {
+  RESP = {}; $('paso3').classList.add('hide'); $('paso1').classList.remove('hide');
+  $('fecha').value = hoyISO(); pintarFecha(); verPendientes(); window.scrollTo(0,0);
+};
+verPendientes();
+if(API.indexOf('PEGA_AQUI') === 0){
+  msg('Falta configurar la URL del Apps Script en la constante <b>API</b> de este archivo.', 'err');
+}
+cargarCatalogo();
+
+/* Aviso si hay un borrador sin enviar de otra sesión */
+(function(){
+  const b = leerBorrador();
+  if(b && b.resp && Object.keys(b.resp).length){
+    msg('Tienes un check list a medias del ' + b.fecha + ' (' + b.sede + '). Pon la misma fecha y sede y toca "Iniciar" para retomarlo.', 'warn');
+  }
+})();
+</script>
+</body>
+</html>
