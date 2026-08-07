@@ -186,6 +186,7 @@ table.rs td{padding:7px 10px;border-bottom:1px solid var(--warm-light);}
     <button class="btn" id="btnRef">↻</button>
   </div>
 
+  <div id="avisoVacia" class="note hide" style="border-left-color:var(--slate)"></div>
   <div class="kpis" id="kpis"></div>
   <div id="hojas"></div>
   <div class="note" id="notaMetodo"></div>
@@ -366,9 +367,15 @@ function fabricas(){
   ITEMS.forEach(i => { if(i.sede) s.add(i.sede); });
   return [...s].filter(Boolean).sort();
 }
+function semanasConDatos(){
+  const fabs = fabsActivas();
+  return [...new Set(FILAS.filter(f => fabs.indexOf(f.sede) >= 0).map(f => f.semanaEtq).filter(Boolean))].sort();
+}
 function semanas(){
+  /* La lista incluye la semana en curso aunque esté vacía, para poder abrirla
+     y ver quién ya marcó. Pero NO es la que se muestra por defecto. */
   const s = new Set(FILAS.map(f => f.semanaEtq).filter(Boolean));
-  s.add(semanaISOde(hoyISO()));   // la semana en curso siempre está, aunque esté vacía
+  s.add(semanaISOde(hoyISO()));
   return [...s].sort();
 }
 
@@ -382,9 +389,22 @@ function inicializar(){
   $('selFab').value = F.fab;
 
   const sems = semanas();
-  if(!F.sem || !sems.includes(F.sem)) F.sem = sems[sems.length-1];
-  $('selSem').innerHTML = sems.slice().reverse().map(s =>
-    '<option value="'+s+'">Semana ' + (+s.split('-S')[1]) + ' · ' + rangoSemana(s) + '</option>').join('');
+  const conDatos = semanasConDatos();
+  const actual = semanaISOde(hoyISO());
+  /* Por defecto se abre en la última semana CON registros, no en la semana en
+     curso: un lunes a las 8am la semana nueva está vacía y una grilla en blanco
+     no dice nada. Si nunca se auditó nada, cae en la semana en curso. */
+  if(!F.sem || sems.indexOf(F.sem) < 0){
+    F.sem = conDatos.length ? conDatos[conDatos.length-1] : actual;
+  }
+  $('selSem').innerHTML = sems.slice().reverse().map(s => {
+    const vacia = conDatos.indexOf(s) < 0;
+    const tags = [];
+    if(s === actual) tags.push('semana actual');
+    if(vacia) tags.push('sin registros');
+    return '<option value="'+s+'">Semana ' + (+s.split('-S')[1]) + ' · ' + rangoSemana(s) +
+      (tags.length ? ' · ' + tags.join(', ') : '') + '</option>';
+  }).join('');
   $('selSem').value = F.sem;
 
   const i = sems.indexOf(F.sem);
@@ -456,6 +476,19 @@ function pintarSemana(){
     '<div class="pbar"><i style="width:' + (totalEsperado ? Math.min(100, todas.length*100/totalEsperado) : 0) + '%"></i></div></div>';
 
   /* ---- una hoja por fábrica ---- */
+  const actual = semanaISOde(hoyISO());
+  if(!todas.length){
+    $('avisoVacia').innerHTML = '<b>La semana ' + (+F.sem.split('-S')[1]) + ' (' + rangoSemana(F.sem) +
+      ') todavía no tiene ningún registro' + (F.fab === 'TODAS' ? '' : ' en ' + esc(F.fab)) + '.</b> ' +
+      (F.sem === actual
+        ? 'Es la semana en curso: la grilla se irá llenando conforme el auditor marque desde el celular.'
+        : 'Si esa semana debió auditarse, nadie envió el check list.') +
+      ' Usa el selector de arriba para ver otra semana.';
+    $('avisoVacia').classList.remove('hide');
+  }else{
+    $('avisoVacia').classList.add('hide');
+  }
+
   $('hojas').innerHTML = fabs.map((fb, idx) => hojaHTML(fb, dias, estado, lunes, idx)).join('');
 
   $('notaMetodo').innerHTML =
