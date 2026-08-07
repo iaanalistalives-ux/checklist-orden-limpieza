@@ -181,8 +181,8 @@ table.rs td{padding:7px 10px;border-bottom:1px solid var(--warm-light);}
     <button class="btn nav" id="btnNext" title="Semana siguiente">›</button>
     <span class="sp"></span>
     <button class="btn pri" id="btnStats">📊 Estadísticas acumuladas</button>
-    <button class="btn" id="btnPdf">🖨 PDF</button>
-    <button class="btn" id="btnExp">⬇ Exportar</button>
+    <button class="btn" id="btnExp">⬇ Exportar dashboard</button>
+    <button class="btn pri hide" id="btnGuardar" title="Abre el diálogo del navegador: elige Destino > Guardar como PDF">🖨 Guardar como PDF</button>
     <button class="btn" id="btnRef">↻</button>
   </div>
 
@@ -765,6 +765,7 @@ function modoExportado(){
   if(!ES_EXPORTADO) return;
   $('btnRef').style.display = 'none';
   $('btnExp').style.display = 'none';
+  $('btnGuardar').classList.remove('hide');
   $('hsub').textContent = 'Copia estática para revisión externa · datos congelados';
   const m = META_EXPORT || {};
   $('selloExp').innerHTML = '<b>Reporte estático.</b> Generado el ' + esc(m.generado||'—') +
@@ -782,7 +783,8 @@ $('btnStats').onclick = abrirStats;
 $('btnCerrar').onclick = cerrarStats;
 $('modal').onclick = e => { if(e.target === $('modal')) cerrarStats(); };
 document.querySelectorAll('.tab').forEach(b => b.onclick = () => mostrarTab(b.dataset.t));
-$('btnPdf').onclick = () => window.print();
+
+$('btnGuardar').onclick = () => window.print();
 $('btnExp').onclick = exportarHTML;
 $('btnRef').onclick = cargar;
 document.addEventListener('keydown', e => { if(e.key === 'Escape') cerrarStats(); });
