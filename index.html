@@ -128,6 +128,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--sage);}
       <div style="font-size:11.5px;color:var(--stone);margin-top:2px">Auditor: <span id="rAuditor"></span></div>
     </div>
     <div id="secciones"></div>
+    <button class="btn sec" id="btnLimpiar">Quitar todas las marcas</button>
+    <button class="btn sec" id="btnDescartar">Descartar y salir sin guardar</button>
     <button class="btn sec" id="btnVolver">Cambiar datos de la auditoría</button>
   </div>
 
@@ -348,13 +350,23 @@ function toggleSec(si){
 function marcar(btn){
   const k = btn.dataset.k, v = btn.dataset.v;
   const cont = btn.closest('.it');
-  cont.querySelectorAll('.opt').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  RESP[k] = RESP[k] || {};
-  RESP[k].res = v;
   const obs = cont.querySelector('.obs');
-  if(v === 'X'){ obs.classList.add('show'); }
-  else { obs.classList.remove('show'); RESP[k].obs = ''; cont.querySelector('textarea').value = ''; }
+  /* Tocar de nuevo la opción ya marcada la quita: el ítem vuelve a estar
+     sin evaluar y el botón Enviar se bloquea otra vez. */
+  const yaEstaba = btn.classList.contains('on');
+  cont.querySelectorAll('.opt').forEach(b => b.classList.remove('on'));
+
+  if(yaEstaba){
+    delete RESP[k];
+    obs.classList.remove('show');
+    cont.querySelector('textarea').value = '';
+  }else{
+    btn.classList.add('on');
+    RESP[k] = RESP[k] || {};
+    RESP[k].res = v;
+    if(v === 'X'){ obs.classList.add('show'); }
+    else { obs.classList.remove('show'); RESP[k].obs = ''; cont.querySelector('textarea').value = ''; }
+  }
   contarSec(+cont.dataset.sec);
   actualizarProgreso();
   guardarBorrador();
@@ -508,6 +520,32 @@ $('auditor').value = localStorage.getItem('lives_auditor') || '';
 $('btnIniciar').onclick = iniciar;
 $('btnEnviar').onclick = enviar;
 $('btnPend').onclick = reintentar;
+function borrarBorrador(){ localStorage.removeItem('lives_borrador'); }
+
+/* Vacía las marcas pero deja el check list abierto para volver a llenarlo. */
+$('btnLimpiar').onclick = () => {
+  const hechas = Object.keys(RESP).length;
+  if(!hechas) return msg('No hay ninguna marca que quitar.', 'ok');
+  if(!confirm('Se van a quitar las ' + hechas + ' marcas de este check list.\n\n¿Continuar?')) return;
+  RESP = {};
+  borrarBorrador();
+  renderSecciones();
+  actualizarProgreso();
+  msg('Check list vaciado. Puedes empezar de nuevo.', 'ok');
+  window.scrollTo(0,0);
+};
+
+/* Descarta todo y vuelve al inicio: es la salida para las pruebas. */
+$('btnDescartar').onclick = () => {
+  if(!confirm('Se va a descartar este check list sin enviarlo y no quedará guardado en ningún lado.\n\n¿Continuar?')) return;
+  RESP = {};
+  borrarBorrador();
+  $('paso2').classList.add('hide'); $('foot').classList.add('hide');
+  $('paso1').classList.remove('hide');
+  msg('Check list descartado. No se guardó nada.', 'ok');
+  window.scrollTo(0,0);
+};
+
 $('btnVolver').onclick = () => {
   $('paso2').classList.add('hide'); $('foot').classList.add('hide');
   $('paso1').classList.remove('hide'); window.scrollTo(0,0);
@@ -526,7 +564,19 @@ cargarCatalogo();
 (function(){
   const b = leerBorrador();
   if(b && b.resp && Object.keys(b.resp).length){
-    msg('Tienes un check list a medias del ' + b.fecha + ' (' + b.sede + '). Pon la misma fecha y sede y toca "Iniciar" para retomarlo.', 'warn');
+    const n = Object.keys(b.resp).length;
+    msg('Tienes un check list a medias del ' + b.fecha + ' (' + b.sede + ') con ' + n + ' marca(s). ' +
+        'Pon la misma fecha y sede y toca "Iniciar" para retomarlo.' +
+        '<div style="margin-top:10px"><button type="button" id="btnTirar" style="background:#fff;border:1.5px solid #B45309;' +
+        'color:#B45309;font-family:inherit;font-size:12.5px;font-weight:700;border-radius:6px;padding:8px 14px;cursor:pointer">' +
+        'Descartar ese borrador</button></div>', 'warn');
+    const bt = document.getElementById('btnTirar');
+    if(bt) bt.onclick = () => {
+      if(!confirm('Se va a borrar el check list a medias del ' + b.fecha + '.\n\n¿Continuar?')) return;
+      borrarBorrador();
+      RESP = {};
+      msg('Borrador descartado.', 'ok');
+    };
   }
 })();
 </script>
