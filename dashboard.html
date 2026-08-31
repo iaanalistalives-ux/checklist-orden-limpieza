@@ -129,12 +129,30 @@ table.rs{width:100%;border-collapse:collapse;font-size:12px;}
 table.rs th{background:var(--warm-light);color:var(--stone);text-transform:uppercase;font-size:10.5px;letter-spacing:.4px;text-align:left;padding:8px 10px;border-bottom:2px solid var(--warm);}
 table.rs td{padding:7px 10px;border-bottom:1px solid var(--warm-light);}
 
+/* ---- Estado transitorio mientras se arma la impresión ---- */
+body.imprimiendo .kpis,body.imprimiendo #avisoVacia,body.imprimiendo #notaMetodo{display:none;}
+
+/* ---- Selector de semanas para el PDF ---- */
+.semlista{border:1px solid var(--warm);border-radius:8px;overflow:hidden;background:#fff;max-height:320px;overflow-y:auto;}
+.semitem{display:flex;align-items:center;gap:11px;padding:10px 14px;border-bottom:1px solid var(--warm-light);cursor:pointer;}
+.semitem:last-child{border-bottom:none;}
+.semitem:hover{background:var(--warm-light);}
+.semitem input{width:17px;height:17px;accent-color:var(--sage);cursor:pointer;flex:none;}
+.semitem .sinfo{flex:1;}
+.semitem .snom{font-size:13.5px;font-weight:700;color:#333;}
+.semitem .sdet{font-size:11.5px;color:var(--stone);margin-top:1px;}
+.semitem .spct{font-size:14px;font-weight:700;white-space:nowrap;}
+.semitem.vacia .snom{color:var(--stone);font-weight:400;}
+
 /* ---- Impresión / PDF ---- */
 @media print{
   @page{size:A4 portrait;margin:9mm;}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
   body{background:#fff!important;font-size:11px;}
   .bar,.no-print,.modal,.kpis{display:none!important;}
+  /* Durante la impresión multi-semana solo van las hojas: los KPIs y el aviso
+     de semana vacía corresponden a la semana en pantalla, no a las elegidas. */
+  body.imprimiendo #avisoVacia,body.imprimiendo #notaMetodo,body.imprimiendo #selloExp{display:none!important;}
   .wrap{max-width:none;padding:0;}
   .header{padding:0 6px;min-height:56px;}
   .header .live{display:none;}
@@ -181,8 +199,7 @@ table.rs td{padding:7px 10px;border-bottom:1px solid var(--warm-light);}
     <button class="btn nav" id="btnNext" title="Semana siguiente">›</button>
     <span class="sp"></span>
     <button class="btn pri" id="btnStats">📊 Estadísticas acumuladas</button>
-    <button class="btn" id="btnExp">⬇ Exportar dashboard</button>
-    <button class="btn pri hide" id="btnGuardar" title="Abre el diálogo del navegador: elige Destino > Guardar como PDF">🖨 Guardar como PDF</button>
+    <button class="btn pri" id="btnPdf">🖨 Imprimir PDF</button>
     <button class="btn" id="btnRef">↻</button>
   </div>
 
@@ -190,6 +207,40 @@ table.rs td{padding:7px 10px;border-bottom:1px solid var(--warm-light);}
   <div class="kpis" id="kpis"></div>
   <div id="hojas"></div>
   <div class="note" id="notaMetodo"></div>
+</div>
+
+<!-- MODAL: ELEGIR SEMANAS PARA EL PDF -->
+<div class="modal" id="modalPdf">
+  <div class="mbox" style="max-width:560px">
+    <div class="mhead">
+      <div>
+        <div class="mt">🖨 IMPRIMIR PDF</div>
+        <div class="ms">Elige qué semanas quieres en el documento</div>
+      </div>
+      <button class="cerrar" id="pdfCerrar">✕</button>
+    </div>
+    <div class="mbody" style="max-height:70vh">
+      <div style="font-size:12.5px;color:var(--stone);margin-bottom:10px">
+        Se imprime la hoja completa de cada semana marcada, con sus no conformidades.
+        <b id="pdfFab" style="color:var(--sage-dark)"></b>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <button class="btn" id="pdfTodas" style="font-size:12px">Marcar todas</button>
+        <button class="btn" id="pdfNinguna" style="font-size:12px">Desmarcar todas</button>
+        <button class="btn" id="pdfActual" style="font-size:12px">Solo la que estoy viendo</button>
+      </div>
+      <div id="pdfLista" class="semlista"></div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap">
+        <button class="btn pri" id="pdfGenerar" style="font-size:14px;padding:10px 20px">Preparar PDF</button>
+        <span style="font-size:12px;color:var(--stone)" id="pdfCuenta">—</span>
+      </div>
+      <div style="font-size:11.5px;color:var(--stone);margin-top:12px;line-height:1.5">
+        Al tocar <b>Preparar PDF</b> se abre el cuadro de impresión del navegador.
+        En <b>Destino</b> elige <b>Guardar como PDF</b> y luego Guardar.
+        Cada semana empieza en una página nueva.
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL DE ESTADÍSTICAS -->
@@ -758,47 +809,132 @@ function etiquetas(eje, suf){
   }};
 }
 
-/* ---------- exportar copia interactiva ---------- */
+/* ---------- exportar copia interactiva ----------
+   Ya no tiene botón en pantalla, pero la función se conserva porque el envío
+   automático de los viernes (Apps Script) usa este mismo mecanismo: toma este
+   archivo, le inyecta los datos en los marcadores y lo manda como adjunto. */
 async function exportarHTML(){
   if(!FILAS.length) return alert('No hay datos para exportar.');
   const fabs = fabsActivas();
   const rows = FILAS.filter(f => fabs.indexOf(f.sede) >= 0);
   if(!rows.length) return alert('No hay datos para la selección actual.');
-  const btn = $('btnExp'), txt = btn.textContent;
-  btn.textContent = 'Generando…'; btn.disabled = true;
+  let src;
   try{
-    let src;
-    try{
-      const r = await fetch(location.href, {cache:'no-store'});
-      if(!r.ok) throw new Error('HTTP ' + r.status);
-      src = await r.text();
-      if(src.indexOf('/*__DATOS__*/') < 0) throw new Error('marcador ausente');
-    }catch(e){ src = '<!DOCTYPE html>\n' + document.documentElement.outerHTML; }
+    const r = await fetch(location.href, {cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    src = await r.text();
+    if(src.indexOf('/*__DATOS__*/') < 0) throw new Error('marcador ausente');
+  }catch(e){ src = '<!DOCTYPE html>\n' + document.documentElement.outerHTML; }
 
-    const meta = {generado: new Date().toLocaleString('es-PE'),
-                  fabrica: (F.fab === 'TODAS' ? 'Todas las fábricas' : F.fab), registros: rows.length};
-    /* Escapar "<" impide que una observación escrita en planta corte el HTML generado. */
-    const seg = o => JSON.stringify(o).replace(/</g, '\\u003c');
-    src = src.replace(/const DATOS_EMBEBIDOS = [\s\S]*?\/\*__DATOS__\*\//, 'const DATOS_EMBEBIDOS = ' + seg(rows) + '; /*__DATOS__*/');
-    src = src.replace(/const ITEMS_EMBEBIDOS = [\s\S]*?\/\*__ITEMS__\*\//, 'const ITEMS_EMBEBIDOS = ' + seg(ITEMS.filter(i => !i.sede || fabs.indexOf(i.sede) >= 0)) + '; /*__ITEMS__*/');
-    src = src.replace(/const META_EXPORT = [\s\S]*?\/\*__META__\*\//, 'const META_EXPORT = ' + seg(meta) + '; /*__META__*/');
-    /* La copia entregada no lleva la URL del Sheet de LIVES. */
-    src = src.replace(/const API = '[^']*'/, "const API = 'SIN_CONEXION_COPIA_ESTATICA'");
+  const meta = {generado: new Date().toLocaleString('es-PE'),
+                fabrica: (F.fab === 'TODAS' ? 'Todas las fábricas' : F.fab), registros: rows.length};
+  /* Escapar "<" impide que una observación escrita en planta corte el HTML generado. */
+  const seg = o => JSON.stringify(o).replace(/</g, '\\u003c');
+  src = src.replace(/const DATOS_EMBEBIDOS = [\s\S]*?\/\*__DATOS__\*\//, 'const DATOS_EMBEBIDOS = ' + seg(rows) + '; /*__DATOS__*/');
+  src = src.replace(/const ITEMS_EMBEBIDOS = [\s\S]*?\/\*__ITEMS__\*\//, 'const ITEMS_EMBEBIDOS = ' + seg(ITEMS.filter(i => !i.sede || fabs.indexOf(i.sede) >= 0)) + '; /*__ITEMS__*/');
+  src = src.replace(/const META_EXPORT = [\s\S]*?\/\*__META__\*\//, 'const META_EXPORT = ' + seg(meta) + '; /*__META__*/');
+  src = src.replace(/const API = '[^']*'/, "const API = 'SIN_CONEXION_COPIA_ESTATICA'");
 
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([src], {type:'text/html;charset=utf-8'}));
-    a.download = 'LIVES_Orden_Limpieza_S' + (+F.sem.split('-S')[1]) + '_' + F.fab.replace(/[^0-9A-Za-z]+/g,'_') + '.html';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  }catch(e){ alert('No se pudo generar el archivo: ' + e.message); }
-  finally{ btn.textContent = txt; btn.disabled = false; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([src], {type:'text/html;charset=utf-8'}));
+  a.download = 'LIVES_Orden_Limpieza_S' + (+F.sem.split('-S')[1]) + '_' + F.fab.replace(/[^0-9A-Za-z]+/g,'_') + '.html';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+/* ---------- PDF: elegir semanas e imprimir ---------- */
+function abrirPdf(){
+  const fabs = fabsActivas();
+  const conDatos = semanasConDatos();
+  const actual = semanaISOde(hoyISO());
+  const lista = [...new Set(conDatos.concat([actual]))].sort().reverse();
+
+  $('pdfFab').textContent = (F.fab === 'TODAS' ? 'Se incluyen todas las fábricas.' : 'Solo ' + F.fab + '.');
+
+  $('pdfLista').innerHTML = lista.map(sem => {
+    const rows = FILAS.filter(f => f.semanaEtq === sem && fabs.indexOf(f.sede) >= 0);
+    const c = contar(rows);
+    const vacia = !rows.length;
+    const col = c.pct === null ? C.stone : (c.pct < 100 ? C.rose : C.sage);
+    return '<label class="semitem' + (vacia ? ' vacia' : '') + '">' +
+      '<input type="checkbox" value="' + sem + '"' + (sem === F.sem && !vacia ? ' checked' : '') +
+        (vacia ? ' disabled' : '') + '>' +
+      '<span class="sinfo"><span class="snom">Semana ' + (+sem.split('-S')[1]) + '</span>' +
+      '<span class="sdet">' + rangoSemana(sem) +
+        (vacia ? ' · sin registros' : ' · ' + c.x + ' NC · ' + new Set(rows.map(r => r.dia)).size + ' día(s) auditado(s)') +
+      '</span></span>' +
+      '<span class="spct" style="color:' + col + '">' + (vacia ? '' : f1(c.pct)) + '</span></label>';
+  }).join('');
+
+  $('pdfLista').querySelectorAll('input').forEach(i => i.onchange = contarSeleccion);
+  contarSeleccion();
+  $('modalPdf').classList.add('show');
+}
+function cerrarPdf(){ $('modalPdf').classList.remove('show'); }
+function seleccionadas(){
+  return [...$('pdfLista').querySelectorAll('input:checked')].map(i => i.value).sort();
+}
+function contarSeleccion(){
+  const n = seleccionadas().length;
+  $('pdfCuenta').textContent = n ? n + ' semana(s) seleccionada(s)' : 'Ninguna semana seleccionada';
+  $('pdfGenerar').disabled = !n;
+  $('pdfGenerar').style.opacity = n ? '1' : '.45';
+}
+
+/* Arma la impresión: pinta una hoja por semana y por fábrica, imprime y
+   devuelve la pantalla a como estaba. */
+function generarPdf(){
+  const sems = seleccionadas();
+  if(!sems.length) return;
+  const fabs = fabsActivas();
+  const hoy = hoyISO();
+  const guardado = $('hojas').innerHTML;   // se restaura al terminar
+  const semOriginal = F.sem;
+
+  let html = '';
+  sems.forEach((sem, si) => {
+    const lunes = lunesDe(sem);
+    /* Cada semana calcula sus propias columnas: una semana con sábado no debe
+       agregarle una columna vacía a las demás. */
+    const dias = DIAS_SEM.slice(0,5);
+    const enSem = new Set(FILAS.filter(f => f.semanaEtq === sem && fabs.indexOf(f.sede) >= 0).map(f => f.dia));
+    if(enSem.has('SÁBADO')) dias.push('SÁBADO');
+    if(enSem.has('DOMINGO')) dias.push('DOMINGO');
+    const estado = dias.map((d,i) => {
+      const f = isoDe(masDias(lunes, i));
+      return f < hoy ? 'pasado' : (f === hoy ? 'hoy' : 'futuro');
+    });
+    /* hojaHTML lee F.sem para la cabecera, así que se apunta a la semana que
+       se está pintando y al final se devuelve a la que el usuario tenía. */
+    F.sem = sem;
+    fabs.forEach((fb, fi) => {
+      html += hojaHTML(fb, dias, estado, lunes, (si === 0 && fi === 0) ? 0 : 1);
+    });
+  });
+  F.sem = semOriginal;
+
+  $('hojas').innerHTML = html;
+  cerrarPdf();
+  document.body.classList.add('imprimiendo');
+
+  const restaurar = () => {
+    document.body.classList.remove('imprimiendo');
+    $('hojas').innerHTML = guardado;
+    window.removeEventListener('afterprint', restaurar);
+  };
+  window.addEventListener('afterprint', restaurar);
+
+  /* Espera un frame para que el navegador pinte las hojas antes de imprimir. */
+  setTimeout(() => {
+    window.print();
+    /* Respaldo: algunos navegadores móviles no disparan afterprint. */
+    setTimeout(() => { if(document.body.classList.contains('imprimiendo')) restaurar(); }, 3000);
+  }, 120);
 }
 
 function modoExportado(){
   if(!ES_EXPORTADO) return;
   $('btnRef').style.display = 'none';
-  $('btnExp').style.display = 'none';
-  $('btnGuardar').classList.remove('hide');
   $('hsub').textContent = 'Copia estática para revisión externa · datos congelados';
   const m = META_EXPORT || {};
   $('selloExp').innerHTML = '<b>Reporte estático.</b> Generado el ' + esc(m.generado||'—') +
@@ -817,10 +953,15 @@ $('btnCerrar').onclick = cerrarStats;
 $('modal').onclick = e => { if(e.target === $('modal')) cerrarStats(); };
 document.querySelectorAll('.tab').forEach(b => b.onclick = () => mostrarTab(b.dataset.t));
 
-$('btnGuardar').onclick = () => window.print();
-$('btnExp').onclick = exportarHTML;
+$('btnPdf').onclick = abrirPdf;
+$('pdfCerrar').onclick = cerrarPdf;
+$('pdfGenerar').onclick = generarPdf;
+$('modalPdf').onclick = e => { if(e.target === $('modalPdf')) cerrarPdf(); };
+$('pdfTodas').onclick   = () => { $('pdfLista').querySelectorAll('input:not(:disabled)').forEach(i => i.checked = true); contarSeleccion(); };
+$('pdfNinguna').onclick = () => { $('pdfLista').querySelectorAll('input').forEach(i => i.checked = false); contarSeleccion(); };
+$('pdfActual').onclick  = () => { $('pdfLista').querySelectorAll('input').forEach(i => i.checked = (i.value === F.sem)); contarSeleccion(); };
 $('btnRef').onclick = cargar;
-document.addEventListener('keydown', e => { if(e.key === 'Escape') cerrarStats(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ cerrarStats(); cerrarPdf(); } });
 
 modoExportado();
 cargar();
