@@ -6,6 +6,7 @@
 <title>LIVES · Check List de Orden y Limpieza — Semana en vivo</title>
 <link rel="icon" href="data:,">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 <style>
 :root{
   --petrol:#0E3B36; --emer:#10B981; --sage:#0F7A5A; --sage-dark:#0B815E;
@@ -129,6 +130,24 @@ table.rs{width:100%;border-collapse:collapse;font-size:12px;}
 table.rs th{background:var(--warm-light);color:var(--stone);text-transform:uppercase;font-size:10.5px;letter-spacing:.4px;text-align:left;padding:8px 10px;border-bottom:2px solid var(--warm);}
 table.rs td{padding:7px 10px;border-bottom:1px solid var(--warm-light);}
 
+/* ---- Zona donde se arma el PDF (fuera de la vista, no se imprime en pantalla) ---- */
+#pdfArea{position:fixed;left:-10000px;top:0;width:1080px;background:#fff;}
+#pdfArea .pdfhead{display:flex;align-items:center;gap:16px;background:var(--petrol);
+  border-bottom:3px solid var(--emer);padding:12px 18px;margin-bottom:14px;}
+#pdfArea .pdfhead img{height:34px;}
+#pdfArea .pdfhead .t1{color:#fff;font-size:15px;font-weight:700;letter-spacing:.3px;}
+#pdfArea .pdfhead .t2{color:#F1F6F4;font-size:11px;}
+#pdfArea .hoja{border:none;border-radius:0;padding:0 18px;margin-bottom:16px;box-shadow:none;}
+#pdfArea .hoja.salto{page-break-before:always;break-before:page;padding-top:10px;}
+#pdfArea .ncbox{border:none;border-radius:0;padding:0;margin-bottom:0;box-shadow:none;}
+#pdfArea table.wk{font-size:11px;}
+#pdfArea table.wk td{padding:4px 6px;}
+#pdfArea table.wk td.itm{font-size:10.5px;}
+#pdfArea table.wk th{padding:6px 5px;font-size:10px;}
+#pdfArea .c{font-size:10.5px;padding:3px 0;}
+#pdfArea table.nc{font-size:10.5px;}
+#pdfArea tr,#pdfArea .hh,#pdfArea .leyenda,#pdfArea tr.secrow{page-break-inside:avoid;break-inside:avoid;}
+
 /* ---- Estado transitorio mientras se arma la impresión ---- */
 body.imprimiendo .kpis,body.imprimiendo #avisoVacia,body.imprimiendo #notaMetodo{display:none;}
 
@@ -209,6 +228,8 @@ body.imprimiendo .kpis,body.imprimiendo #avisoVacia,body.imprimiendo #notaMetodo
   <div class="note" id="notaMetodo"></div>
 </div>
 
+<div id="pdfArea" aria-hidden="true"></div>
+
 <!-- MODAL: ELEGIR SEMANAS PARA EL PDF -->
 <div class="modal" id="modalPdf">
   <div class="mbox" style="max-width:560px">
@@ -231,12 +252,12 @@ body.imprimiendo .kpis,body.imprimiendo #avisoVacia,body.imprimiendo #notaMetodo
       </div>
       <div id="pdfLista" class="semlista"></div>
       <div style="display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap">
-        <button class="btn pri" id="pdfGenerar" style="font-size:14px;padding:10px 20px">Preparar PDF</button>
+        <button class="btn pri" id="pdfGenerar" style="font-size:14px;padding:10px 20px">⬇ Descargar PDF</button>
         <span style="font-size:12px;color:var(--stone)" id="pdfCuenta">—</span>
       </div>
       <div style="font-size:11.5px;color:var(--stone);margin-top:12px;line-height:1.5">
-        Al tocar <b>Preparar PDF</b> se abre el cuadro de impresión del navegador.
-        En <b>Destino</b> elige <b>Guardar como PDF</b> y luego Guardar.
+        Al tocar <b>Descargar PDF</b> el archivo se genera y se guarda en tus descargas.
+        Puede tardar unos segundos según cuántas semanas elijas.
         Cada semana empieza en una página nueva.
       </div>
     </div>
@@ -881,21 +902,97 @@ function contarSeleccion(){
   $('pdfGenerar').style.opacity = n ? '1' : '.45';
 }
 
-/* Arma la impresión: pinta una hoja por semana y por fábrica, imprime y
-   devuelve la pantalla a como estaba. */
-function generarPdf(){
+/* Arma el documento con las semanas elegidas y descarga el PDF directamente,
+   sin pasar por el cuadro de impresión del navegador. */
+async function generarPdf(){
   const sems = seleccionadas();
   if(!sems.length) return;
   const fabs = fabsActivas();
   const hoy = hoyISO();
-  const guardado = $('hojas').innerHTML;   // se restaura al terminar
+  const semOriginal = F.sem;
+
+  const btn = $('pdfGenerar');
+  const txt = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Generando…';
+  $('pdfCuenta').textContent = 'Armando el documento, puede tardar unos segundos…';
+
+  try{
+    let html = '';
+    sems.forEach((sem, si) => {
+      const lunes = lunesDe(sem);
+      /* Cada semana calcula sus propias columnas: una semana con sábado no debe
+         agregarle una columna vacía a las demás. */
+      const dias = DIAS_SEM.slice(0,5);
+      const enSem = new Set(FILAS.filter(f => f.semanaEtq === sem && fabs.indexOf(f.sede) >= 0).map(f => f.dia));
+      if(enSem.has('SÁBADO')) dias.push('SÁBADO');
+      if(enSem.has('DOMINGO')) dias.push('DOMINGO');
+      const estado = dias.map((d,i) => {
+        const f = isoDe(masDias(lunes, i));
+        return f < hoy ? 'pasado' : (f === hoy ? 'hoy' : 'futuro');
+      });
+      /* hojaHTML lee F.sem para la cabecera, así que se apunta a la semana que
+         se está pintando y al final se devuelve a la que el usuario tenía. */
+      F.sem = sem;
+      fabs.forEach((fb, fi) => {
+        html += hojaHTML(fb, dias, estado, lunes, (si === 0 && fi === 0) ? 0 : 1);
+      });
+    });
+    F.sem = semOriginal;
+
+    const logo = document.querySelector('.header img');
+    const cab = '<div class="pdfhead">' +
+      (logo ? '<img src="' + logo.src + '" alt="LIVES">' : '') +
+      '<div><div class="t1">CHECK LIST DE ORDEN Y LIMPIEZA</div>' +
+      '<div class="t2">' + (sems.length === 1
+        ? 'Semana ' + (+sems[0].split('-S')[1]) + ' · ' + rangoSemana(sems[0])
+        : sems.length + ' semanas · ' + rangoSemana(sems[0]) + ' al ' + rangoSemana(sems[sems.length-1]).split(' al ')[1]) +
+      ' · ' + (F.fab === 'TODAS' ? 'Todas las fábricas' : F.fab) + '</div></div></div>';
+
+    $('pdfArea').innerHTML = cab + html;
+
+    const nombre = 'LIVES_Orden_Limpieza_' +
+      (sems.length === 1 ? 'S' + (+sems[0].split('-S')[1]) + '_' + sems[0].split('-S')[0]
+                         : sems.length + 'semanas') +
+      '_' + (F.fab === 'TODAS' ? 'TODAS' : F.fab.replace(/[^0-9A-Za-zÁÉÍÓÚÑ]+/g,'_')) + '.pdf';
+
+    if(typeof html2pdf === 'undefined') throw new Error('no se cargó el generador de PDF');
+
+    await html2pdf().set({
+      margin: [8, 6, 10, 6],
+      filename: nombre,
+      image: {type:'jpeg', quality:0.96},
+      html2canvas: {scale:2, useCORS:true, backgroundColor:'#FFFFFF', windowWidth:1080},
+      jsPDF: {unit:'mm', format:'a4', orientation:'portrait', compress:true},
+      /* avoid evita que una fila del check list quede cortada entre dos páginas */
+      pagebreak: {mode:['css','legacy'], avoid:['tr','.secrow','.hh','.leyenda'], before:['.hoja.salto']}
+    }).from($('pdfArea')).save();
+
+    cerrarPdf();
+  }catch(e){
+    F.sem = semOriginal;
+    alert('No se pudo generar el PDF (' + e.message + ').\n\nSe abrirá el cuadro de impresión: en Destino elige "Guardar como PDF".');
+    imprimirRespaldo();
+  }finally{
+    $('pdfArea').innerHTML = '';
+    btn.disabled = false;
+    btn.textContent = txt;
+    contarSeleccion();
+  }
+}
+
+/* Respaldo si el generador no carga (sin internet para el CDN, por ejemplo). */
+function imprimirRespaldo(){
+  const sems = seleccionadas();
+  if(!sems.length) return;
+  const fabs = fabsActivas();
+  const hoy = hoyISO();
+  const guardado = $('hojas').innerHTML;
   const semOriginal = F.sem;
 
   let html = '';
   sems.forEach((sem, si) => {
     const lunes = lunesDe(sem);
-    /* Cada semana calcula sus propias columnas: una semana con sábado no debe
-       agregarle una columna vacía a las demás. */
     const dias = DIAS_SEM.slice(0,5);
     const enSem = new Set(FILAS.filter(f => f.semanaEtq === sem && fabs.indexOf(f.sede) >= 0).map(f => f.dia));
     if(enSem.has('SÁBADO')) dias.push('SÁBADO');
@@ -904,30 +1001,22 @@ function generarPdf(){
       const f = isoDe(masDias(lunes, i));
       return f < hoy ? 'pasado' : (f === hoy ? 'hoy' : 'futuro');
     });
-    /* hojaHTML lee F.sem para la cabecera, así que se apunta a la semana que
-       se está pintando y al final se devuelve a la que el usuario tenía. */
     F.sem = sem;
-    fabs.forEach((fb, fi) => {
-      html += hojaHTML(fb, dias, estado, lunes, (si === 0 && fi === 0) ? 0 : 1);
-    });
+    fabs.forEach((fb, fi) => { html += hojaHTML(fb, dias, estado, lunes, (si === 0 && fi === 0) ? 0 : 1); });
   });
   F.sem = semOriginal;
 
   $('hojas').innerHTML = html;
   cerrarPdf();
   document.body.classList.add('imprimiendo');
-
   const restaurar = () => {
     document.body.classList.remove('imprimiendo');
     $('hojas').innerHTML = guardado;
     window.removeEventListener('afterprint', restaurar);
   };
   window.addEventListener('afterprint', restaurar);
-
-  /* Espera un frame para que el navegador pinte las hojas antes de imprimir. */
   setTimeout(() => {
     window.print();
-    /* Respaldo: algunos navegadores móviles no disparan afterprint. */
     setTimeout(() => { if(document.body.classList.contains('imprimiendo')) restaurar(); }, 3000);
   }, 120);
 }
