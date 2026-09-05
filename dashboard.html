@@ -131,7 +131,23 @@ table.rs th{background:var(--warm-light);color:var(--stone);text-transform:upper
 table.rs td{padding:7px 10px;border-bottom:1px solid var(--warm-light);}
 
 /* ---- Zona donde se arma el PDF (fuera de la vista, no se imprime en pantalla) ---- */
-#pdfArea{position:fixed;left:-10000px;top:0;width:1080px;background:#fff;}
+#pdfArea{display:none;background:#fff;width:1080px;padding:0 0 20px;}
+/* Durante la captura el documento SÍ se renderiza en pantalla: html2canvas no
+   puede fotografiar un nodo con display:none ni uno fuera del viewport. Se
+   coloca arriba de todo y se tapa con una capa opaca para que el usuario no
+   vea el parpadeo. */
+body.armando-pdf{overflow:hidden;}
+body.armando-pdf #pdfArea{display:block;position:absolute;top:0;left:0;z-index:1;}
+body.armando-pdf .wrap,body.armando-pdf .header{visibility:hidden;}
+#capaPdf{position:fixed;inset:0;background:rgba(14,59,54,.96);z-index:9999;display:none;
+  align-items:center;justify-content:center;flex-direction:column;gap:16px;color:#fff;
+  font-family:Calibri,Arial,sans-serif;}
+#capaPdf.show{display:flex;}
+#capaPdf .aro{width:44px;height:44px;border:4px solid rgba(255,255,255,.25);
+  border-top-color:var(--emer);border-radius:50%;animation:giro .8s linear infinite;}
+@keyframes giro{to{transform:rotate(360deg);}}
+#capaPdf .txt{font-size:15px;font-weight:700;}
+#capaPdf .sub{font-size:12.5px;color:#DCE5E2;}
 #pdfArea .pdfhead{display:flex;align-items:center;gap:16px;background:var(--petrol);
   border-bottom:3px solid var(--emer);padding:12px 18px;margin-bottom:14px;}
 #pdfArea .pdfhead img{height:34px;}
@@ -229,6 +245,11 @@ body.imprimiendo .kpis,body.imprimiendo #avisoVacia,body.imprimiendo #notaMetodo
 </div>
 
 <div id="pdfArea" aria-hidden="true"></div>
+<div id="capaPdf">
+  <div class="aro"></div>
+  <div class="txt">Generando el PDF…</div>
+  <div class="sub" id="capaSub">Preparando las hojas</div>
+</div>
 
 <!-- MODAL: ELEGIR SEMANAS PARA EL PDF -->
 <div class="modal" id="modalPdf">
@@ -950,6 +971,15 @@ async function generarPdf(){
       ' · ' + (F.fab === 'TODAS' ? 'Todas las fábricas' : F.fab) + '</div></div></div>';
 
     $('pdfArea').innerHTML = cab + html;
+    cerrarPdf();
+    $('capaSub').textContent = sems.length + ' semana(s) · esto puede tardar unos segundos';
+    $('capaPdf').classList.add('show');
+    document.body.classList.add('armando-pdf');
+    /* La captura arranca desde el tope del documento: si la página estaba
+       desplazada, html2canvas fotografía el trozo equivocado. */
+    window.scrollTo(0, 0);
+    /* Dos frames para que el navegador termine de pintar las hojas antes de capturar. */
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
     const nombre = 'LIVES_Orden_Limpieza_' +
       (sems.length === 1 ? 'S' + (+sems[0].split('-S')[1]) + '_' + sems[0].split('-S')[0]
@@ -962,18 +992,20 @@ async function generarPdf(){
       margin: [8, 6, 10, 6],
       filename: nombre,
       image: {type:'jpeg', quality:0.96},
-      html2canvas: {scale:2, useCORS:true, backgroundColor:'#FFFFFF', windowWidth:1080},
+      html2canvas: {scale:2, useCORS:true, backgroundColor:'#FFFFFF',
+                    width:1080, windowWidth:1080, scrollX:0, scrollY:0,
+                    height: $('pdfArea').scrollHeight, windowHeight: $('pdfArea').scrollHeight},
       jsPDF: {unit:'mm', format:'a4', orientation:'portrait', compress:true},
       /* avoid evita que una fila del check list quede cortada entre dos páginas */
       pagebreak: {mode:['css','legacy'], avoid:['tr','.secrow','.hh','.leyenda'], before:['.hoja.salto']}
     }).from($('pdfArea')).save();
-
-    cerrarPdf();
   }catch(e){
     F.sem = semOriginal;
     alert('No se pudo generar el PDF (' + e.message + ').\n\nSe abrirá el cuadro de impresión: en Destino elige "Guardar como PDF".');
     imprimirRespaldo();
   }finally{
+    document.body.classList.remove('armando-pdf');
+    $('capaPdf').classList.remove('show');
     $('pdfArea').innerHTML = '';
     btn.disabled = false;
     btn.textContent = txt;
