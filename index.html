@@ -111,7 +111,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--sage);}
 
       <div class="f">
         <label for="auditor">Auditor (quien revisa)</label>
-        <input type="text" id="auditor" placeholder="Nombre y apellido" autocomplete="name">
+        <select id="auditor"><option value="">Cargando…</option></select>
       </div>
 
       <button class="btn" id="btnIniciar">Iniciar check list</button>
@@ -138,7 +138,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--sage);}
     <div class="card done">
       <div class="big">✓</div>
       <h2>Check list enviado</h2>
-      <p>Ya se ve en el dashboard en vivo.</p>
+      <p>Ya se ve en el dashboard. Guarda el código por si tienes que citarlo.</p>
       <div class="res" id="resumen"></div>
       <button class="btn" id="btnNueva">Nueva auditoría</button>
     </div>
@@ -158,23 +158,33 @@ input:focus,select:focus,textarea:focus{border-color:var(--sage);}
 
 <script>
 /* ===================================================================
-   CONFIGURACIÓN — lo único que tienes que editar
-   Pega aquí la URL /exec de tu implementación de Apps Script.
+   CONEXIÓN — Supabase (lives-datos), desde el 28/09/2026.
+   El formulario se usa por el link, SIN usuario ni clave del portal
+   (decisión de Christian, 28/09). Usa solo la clave pública; la base
+   valida todo lo que llega: catálogo, auditor de la lista, fecha no
+   futura y un solo check list vigente por día y fábrica.
+   Funciones: ol_inicio (catálogo y auditores), ol_dia (lo ya enviado
+   ese día) y ol_guardar (guarda; reintentar con el mismo id no duplica).
 =================================================================== */
-const API = 'https://script.google.com/macros/s/AKfycbzP-DE7hsPEXoFr3QY6noIOMT-kUKrNXji5tRmjWBD-Ikdj-49vorfu9Z52xUDkbsv6/exec';
+const SB_URL = 'https://xxfufpddgoyhbotjmaiy.supabase.co';
+const SB_KEY = 'sb_publishable_1g-n6UT70EUlNAo8Lyc04w_jKR4LpXZ';
 /* =================================================================== */
 
 const DIAS = ['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
 const MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
 
-/* Catálogo de respaldo: si el Sheet no responde (sin señal, Apps Script caído),
-   el celular igual puede auditar. La fuente real es la hoja CATALOGO. */
+/* Llaves del celular. Son propias de este formulario: la versión anterior usaba
+   nombres genéricos (lives_cola, lives_borrador…) que se migran una sola vez. */
+const K_COLA = 'ol_cola', K_BORR = 'ol_borrador', K_SEDE = 'ol_sede', K_AUD = 'ol_auditor', K_CAT = 'ol_catalogo_local';
+
+/* Catálogo de respaldo: si no hay señal al abrir, el celular igual puede auditar
+   y el envío queda en cola. La fuente real es la tabla ol_catalogo de Supabase. */
 const CAT_FALLBACK = [
-["CHORRILLOS","ALMACEN DE TELA / CORTE",1,1,"TELAS RELAJADAS CON ETIQUETA EN LA MESA (TIEMPO DE INICIO Y FIN)"],
-["CHORRILLOS","ALMACEN DE TELA / CORTE",1,2,"EL TENDIDO DE TELAS DEBE SER POR COLOR, SEPARADOS COLORES CLAROS DE OSCUROS ANTES Y DESPUÉS DE CORTE DE PIEZAS"],
-["CHORRILLOS","ALMACEN DE TELA / CORTE",1,3,"REPORTE DE CALIBRACIÓN DE FUSIONADORA"],
-["CHORRILLOS","ALMACEN DE TELA / CORTE",1,4,"TIJERAS CON NOMBRE EN CORTE"],
-["CHORRILLOS","ALMACEN DE TELA / CORTE",1,5,"LAS TELAS E HILADOS ALMACENADOS TIENEN QUE ESTAR POR LO MENOS A 10CM DE LA PARED (NO PEGADAS) Y SOBRE PARIHUELAS (NO EN EL PISO)"],
+["CHORRILLOS","CORTE / ALMACÉN DE TELAS",1,1,"TELAS RELAJADAS CON ETIQUETA EN LA MESA (TIEMPO DE INICIO Y FIN)"],
+["CHORRILLOS","CORTE / ALMACÉN DE TELAS",1,2,"EL TENDIDO DE TELAS DEBE SER POR COLOR, SEPARADOS COLORES CLAROS DE OSCUROS ANTES Y DESPUÉS DE CORTE DE PIEZAS"],
+["CHORRILLOS","CORTE / ALMACÉN DE TELAS",1,3,"REPORTE DE CALIBRACIÓN DE FUSIONADORA"],
+["CHORRILLOS","CORTE / ALMACÉN DE TELAS",1,4,"TIJERAS CON NOMBRE EN CORTE"],
+["CHORRILLOS","CORTE / ALMACÉN DE TELAS",1,5,"LAS TELAS E HILADOS ALMACENADOS TIENEN QUE ESTAR POR LO MENOS A 10CM DE LA PARED (NO PEGADAS) Y SOBRE PARIHUELAS (NO EN EL PISO)"],
 ["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,1,"CADA LÍNEA DE COSTURA DEBE TENER EL PPS/MOCK UP APROBADO COLGADO"],
 ["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,2,"BOTELLAS DE AGUA BIEN ETIQUETADAS Y EN SU LUGAR"],
 ["BARRANCO","COSTURA PRODUCCIÓN Y DESARROLLO",2,3,"CERTIFICADO DE AGUJAS ROTAS EN ORDEN"],
@@ -201,15 +211,78 @@ const CAT_FALLBACK = [
 ["BARRANCO","DETECTOR DE METALES",4,7,"CAJAS LUEGO DE AUDITADAS Y CERRADAS DEBEN MANTENERSE EN EL ÁREA CERRADA DE EMPAQUE"],
 ["BARRANCO","AVÍOS",5,1,"LOS AVÍOS DEBEN ESTAR CORRECTAMENTE ALMACENADOS EN CAJAS/DEPÓSITOS, IDENTIFICADOS POR TIPO DE AVÍO/MARCA CLIENTE"],
 ["BARRANCO","AVÍOS",5,2,"LAS ETIQUETAS DE MARCA DE THEORY / HELMUT LANG DEBEN ESTAR ALMACENADAS CON LLAVE"],
-["BARRANCO","AVÍOS",5,3,"MANTENER EL ALMACÉN DE AVÍOS ORDENADO"],
+["BARRANCO","AVÍOS",5,3,"MANTENER EL ALMACÉN DE AVÍOS ORDENADO Y PUERTA CERRADA"],
 ["BARRANCO","OTROS",6,1,"LUGAR DONDE SE ALMACENAN SALDOS Y SEGUNDAS DEBE SER CERRADO Y CON LLAVE, INDICANDO ESTILO/PO/AÑO/CLIENTE"],
 ["BARRANCO","OTROS",6,2,"LOS SALDOS Y SEGUNDAS DEBEN TENER PACKING LIST PEGADO AFUERA DE LAS CAJAS"]
 ].map(r => ({sede:r[0], seccion:r[1], orden:r[2], n:r[3], item:r[4]}));
+const AUD_FALLBACK = ['Juan Carlos Torres Arellano','Javier Sebastian Espinoza Pachas'];
 
 let CATALOGO = CAT_FALLBACK.slice();
+let AUDITORES = AUD_FALLBACK.slice();
 let ITEMS = [];        // ítems de la sede elegida
 let RESP  = {};        // clave -> {res, obs}
+let REEMPLAZAR = false;  // true cuando se está corrigiendo un check list ya enviado
 const $ = id => document.getElementById(id);
+
+/* ---------- almacenamiento local seguro ---------- */
+function lsGet(k, def){ try{ const v = localStorage.getItem(k); return v === null ? def : v; }catch(e){ return def; } }
+function lsSet(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+function lsJson(k, def){ try{ const v = JSON.parse(localStorage.getItem(k) || 'null'); return v === null ? def : v; }catch(e){ return def; } }
+
+/* Migración única desde la versión anterior (misma dirección github.io). Solo se
+   traen los datos que tienen forma de check list; lo demás no se toca. */
+(function migrarLocal(){
+  const esCheck = p => p && p.id && p.fecha && p.sede && Array.isArray(p.respuestas) &&
+                       p.respuestas.length && p.respuestas[0].seccion !== undefined && p.respuestas[0].res !== undefined;
+  const viejo = lsJson('lives_cola', null);
+  if(Array.isArray(viejo) && viejo.length){
+    const mios = viejo.filter(esCheck), otros = viejo.filter(p => !esCheck(p));
+    if(mios.length){
+      const cola = lsJson(K_COLA, []);
+      mios.forEach(p => { if(!cola.find(x => x.id === p.id)) cola.push(p); });
+      lsSet(K_COLA, JSON.stringify(cola));
+      if(otros.length) lsSet('lives_cola', JSON.stringify(otros)); else lsDel('lives_cola');
+    }
+  }
+  const b = lsJson('lives_borrador', null);
+  if(b && b.resp && b.sede && b.fecha && !lsGet(K_BORR, null)){ lsSet(K_BORR, JSON.stringify(b)); lsDel('lives_borrador'); }
+  if(!lsGet(K_SEDE, null) && lsGet('lives_sede', null)) lsSet(K_SEDE, lsGet('lives_sede', ''));
+})();
+
+/* ---------- conexión ---------- */
+async function rpcUna(fn, cuerpo){
+  const ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  const reloj = setTimeout(() => { if(ctl) ctl.abort(); }, 20000);
+  let r;
+  try{
+    r = await fetch(SB_URL + '/rest/v1/rpc/' + fn, {
+      method:'POST', cache:'no-store',
+      headers:{'Content-Type':'application/json', 'apikey':SB_KEY},
+      body: JSON.stringify(cuerpo || {}), signal: ctl ? ctl.signal : undefined});
+  }catch(e){
+    clearTimeout(reloj);
+    const err = new Error(e && e.name === 'AbortError' ? 'la respuesta tardó demasiado' : 'sin conexión');
+    err.red = true; throw err;
+  }
+  clearTimeout(reloj);
+  const txt = await r.text();
+  let j = null; try{ j = txt ? JSON.parse(txt) : null; }catch(e){}
+  if(!r.ok){
+    const err = new Error((j && (j.message || j.hint)) || ('error del servidor ' + r.status));
+    err.red = (r.status >= 500 || r.status === 429); throw err;
+  }
+  return j;
+}
+/* Un reintento ante corte de señal; la siguiente acción vuelve a intentar sola. */
+async function rpc(fn, cuerpo){
+  try{ return await rpcUna(fn, cuerpo); }
+  catch(e){
+    if(!e.red) throw e;
+    await new Promise(r => setTimeout(r, 1200));
+    return await rpcUna(fn, cuerpo);
+  }
+}
 
 /* ---------- Fecha: día de la semana + semana ISO ---------- */
 function semanaISO(f){
@@ -246,6 +319,7 @@ function pintarFecha(){
     '<div class="sub">Semana ' + p.semana + ' del ' + p.anioISO + ' (' + p.semanaEtq + ') · Mes ' + p.mesNombre +
     (finde ? ' · <b style="color:#B45309">Fin de semana</b>' : '') + '</div>';
 }
+function fechaTxt(f){ const p = String(f||'').split('-'); return p.length === 3 ? p[2]+'/'+p[1]+'/'+p[0] : f; }
 
 function msg(txt, tipo){
   const m = $('msg');
@@ -255,50 +329,89 @@ function msg(txt, tipo){
 }
 function limpiarMsg(){ $('msg').className = 'msg'; }
 
-/* ---------- Catálogo ---------- */
+/* ---------- Catálogo y auditores ---------- */
 async function cargarCatalogo(){
+  const local = lsJson(K_CAT, null);
+  if(local && Array.isArray(local.items) && local.items.length){
+    CATALOGO = local.items;
+    if(Array.isArray(local.auditores) && local.auditores.length) AUDITORES = local.auditores;
+  }
   try{
-    const r = await fetch(API + '?action=catalogo', {method:'GET'});
-    const j = await r.json();
-    if(j.ok && j.items && j.items.length){ CATALOGO = j.items; }
+    const j = await rpc('ol_inicio', {});
+    if(j && j.ok && j.items && j.items.length){
+      CATALOGO = j.items;
+      if(j.auditores && j.auditores.length) AUDITORES = j.auditores;
+      lsSet(K_CAT, JSON.stringify({items:CATALOGO, auditores:AUDITORES}));
+    }
   }catch(e){
-    msg('No se pudo leer el catálogo del Sheet. Se usará la lista guardada en el equipo — igual puedes auditar y enviar.', 'warn');
+    msg('No hay conexión con la base de datos. Se usará la lista guardada en el equipo — igual puedes auditar; el envío quedará guardado en el celular hasta que vuelva la señal.', 'warn');
   }
   llenarSedes();
+  llenarAuditores();
 }
 function llenarSedes(){
   const sedes = [...new Set(CATALOGO.map(i => i.sede))].sort();
-  const s = $('sede'), prev = localStorage.getItem('lives_sede') || '';
+  const s = $('sede'), prev = lsGet(K_SEDE, '');
   s.innerHTML = '<option value="">Selecciona la sede…</option>' +
-    sedes.map(x => '<option value="'+x+'">'+x+'</option>').join('');
+    sedes.map(x => '<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
   if(prev && sedes.includes(prev)) s.value = prev;
+}
+function llenarAuditores(){
+  const s = $('auditor'), prev = lsGet(K_AUD, '');
+  s.innerHTML = '<option value="">Selecciona tu nombre…</option>' +
+    AUDITORES.map(x => '<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');
+  if(prev && AUDITORES.includes(prev)) s.value = prev;
 }
 
 /* ---------- Render de ítems ---------- */
 function clave(it){ return it.seccion + '||' + it.n; }
 
-function iniciar(){
-  const f = $('fecha').value, sede = $('sede').value, aud = $('auditor').value.trim();
+async function iniciar(){
+  const f = $('fecha').value, sede = $('sede').value, aud = $('auditor').value;
   if(!f)   return msg('Falta la fecha de la auditoría.');
+  if(f > hoyISO()) return msg('La fecha de la auditoría es posterior a hoy. Revisa la fecha.');
   if(!sede) return msg('Falta elegir la sede.');
-  if(!aud)  return msg('Falta el nombre del auditor.');
+  if(!aud)  return msg('Falta elegir el auditor.');
   limpiarMsg();
-  localStorage.setItem('lives_sede', sede);
-  localStorage.setItem('lives_auditor', aud);
+  lsSet(K_SEDE, sede);
+  lsSet(K_AUD, aud);
 
   ITEMS = CATALOGO.filter(i => i.sede === sede)
                   .sort((a,b) => a.orden - b.orden || a.n - b.n);
-  if(!ITEMS.length) return msg('La sede ' + sede + ' no tiene ítems activos en el catálogo.');
+  if(!ITEMS.length) return msg('La sede ' + esc(sede) + ' no tiene ítems activos en el catálogo.');
+
+  const borr = leerBorrador();
+  RESP = (borr && borr.sede === sede && borr.fecha === f) ? borr.resp : {};
+  REEMPLAZAR = !!(borr && borr.sede === sede && borr.fecha === f && borr.reemplazar);
+
+  /* ¿Ya se envió ese día? Se ofrece corregirlo en vez de duplicarlo.
+     Sin señal se sigue igual: al enviar, la base vuelve a comprobarlo. */
+  if(!REEMPLAZAR){
+    $('btnIniciar').disabled = true; $('btnIniciar').textContent = 'Revisando…';
+    try{
+      const d = await rpc('ol_dia', {p_fecha: f, p_sede: sede});
+      if(d && d.existe){
+        const ok = confirm('Ya hay un check list del ' + fechaTxt(f) + ' en ' + sede +
+          ', enviado por ' + d.auditor + ' (' + d.envio + ').\n\n' +
+          'Aceptar: abrirlo para corregirlo (reemplaza al anterior).\nCancelar: no hacer nada.');
+        if(!ok){ $('btnIniciar').disabled = false; $('btnIniciar').textContent = 'Iniciar check list'; return; }
+        REEMPLAZAR = true;
+        if(!Object.keys(RESP).length){
+          RESP = {};
+          (d.marcas || []).forEach(m => { RESP[m.seccion + '||' + m.n] = {res:m.res, obs:m.obs || ''}; });
+        }
+      }
+    }catch(e){ /* sin señal: se sigue */ }
+    $('btnIniciar').disabled = false; $('btnIniciar').textContent = 'Iniciar check list';
+  }
 
   const p = partes(f);
   $('rSede').textContent = sede;
   $('rFecha').textContent = p.diaSemana + ' ' + p.dia + '/' + String(p.mes).padStart(2,'0') + '/' + p.anio + ' · Semana ' + p.semana;
-  $('rAuditor').textContent = aud;
-
-  const borr = leerBorrador();
-  RESP = (borr && borr.sede === sede && borr.fecha === f) ? borr.resp : {};
+  $('rAuditor').textContent = aud + (REEMPLAZAR ? ' · corrigiendo el check list ya enviado' : '');
 
   renderSecciones();
+  guardarBorrador();
   $('paso1').classList.add('hide');
   $('paso2').classList.remove('hide');
   $('foot').classList.remove('hide');
@@ -315,7 +428,7 @@ function renderSecciones(){
     const its = ITEMS.filter(i => i.seccion === s.n);
     return '<div class="sec" id="sec'+si+'">' +
       '<div class="sech" onclick="toggleSec('+si+')">' +
-        '<div class="st">'+s.n+'</div>' +
+        '<div class="st">'+esc(s.n)+'</div>' +
         '<div class="sc" id="sc'+si+'">0/'+its.length+'</div>' +
         '<div class="ar" id="ar'+si+'">▾</div>' +
       '</div>' +
@@ -401,18 +514,17 @@ function actualizarProgreso(){
   $('pPct').textContent = base ? (ok*100/base).toFixed(0) + '%' : '—';
   $('pBar').style.width = (ev*100/total) + '%';
   $('btnEnviar').disabled = (ev < total);
-  $('btnEnviar').textContent = (ev < total) ? 'Faltan ' + (total-ev) : 'Enviar';
+  $('btnEnviar').textContent = (ev < total) ? 'Faltan ' + (total-ev) : (REEMPLAZAR ? 'Guardar corrección' : 'Enviar');
 }
 
 /* ---------- Borrador local ---------- */
 function guardarBorrador(){
-  localStorage.setItem('lives_borrador', JSON.stringify({
-    fecha:$('fecha').value, sede:$('sede').value, auditor:$('auditor').value.trim(), resp:RESP
+  lsSet(K_BORR, JSON.stringify({
+    fecha:$('fecha').value, sede:$('sede').value, auditor:$('auditor').value, resp:RESP, reemplazar:REEMPLAZAR
   }));
 }
-function leerBorrador(){
-  try{ return JSON.parse(localStorage.getItem('lives_borrador') || 'null'); }catch(e){ return null; }
-}
+function leerBorrador(){ return lsJson(K_BORR, null); }
+function borrarBorrador(){ lsDel(K_BORR); }
 
 /* ---------- Envío ---------- */
 function uuid(){
@@ -420,7 +532,7 @@ function uuid(){
 }
 
 async function enviar(){
-  const fecha = $('fecha').value, sede = $('sede').value, aud = $('auditor').value.trim();
+  const fecha = $('fecha').value, sede = $('sede').value, aud = $('auditor').value;
   const faltanObs = ITEMS.filter(it => {
     const r = RESP[clave(it)];
     return r && r.res === 'X' && !(r.obs || '').trim();
@@ -431,7 +543,7 @@ async function enviar(){
 
   const p = partes(fecha);
   const payload = {
-    id: uuid(), fecha: fecha, sede: sede, auditor: aud,
+    id: uuid(), fecha: fecha, sede: sede, auditor: aud, reemplazar: REEMPLAZAR,
     respuestas: ITEMS.map(it => {
       const r = RESP[clave(it)] || {};
       return {seccion: it.seccion, n: it.n, item: it.item, res: r.res || 'NA', obs: (r.obs||'').trim()};
@@ -440,68 +552,89 @@ async function enviar(){
 
   $('btnEnviar').disabled = true;
   $('btnEnviar').textContent = 'Enviando…';
-  const r = await postar(payload);
+  let r = await postar(payload);
+
+  if(!r.ok && r.codigo === 'ya_existe'){
+    const si = confirm('Mientras llenabas, se guardó otro check list del ' + fechaTxt(fecha) + ' en ' + sede +
+      ' (' + r.auditor + ', ' + r.envio + ').\n\nAceptar: reemplazarlo con este.\nCancelar: no enviar.');
+    if(si){ payload.reemplazar = true; r = await postar(payload); }
+    else { actualizarProgreso(); return msg('No se envió. Tu check list sigue aquí, sin perder nada.', 'warn'); }
+  }
+
   if(r.ok){
-    localStorage.removeItem('lives_borrador');
-    mostrarResumen(payload, p, r.pendiente);
-  }else{
+    borrarBorrador();
+    REEMPLAZAR = false;
+    mostrarResumen(payload, p, r.reemplazo);
+  }else if(r.red){
     encolar(payload);
-    msg('No se pudo enviar (' + r.error + '). El check list quedó <b>guardado en el celular</b>: al recuperar señal, entra otra vez y toca "Reintentar envíos pendientes".', 'warn');
+    borrarBorrador();
+    msg('No hay señal (' + esc(r.error) + '). El check list quedó <b>guardado en el celular</b>: al recuperar señal, entra otra vez y toca "Reintentar envíos pendientes".', 'warn');
     $('btnEnviar').disabled = false;
     $('btnEnviar').textContent = 'Reintentar';
+  }else{
+    /* Error de datos (fecha, auditor, catálogo): no se encola, se corrige aquí. */
+    actualizarProgreso();
+    msg('No se guardó: ' + esc(r.error) + '. Tu check list sigue aquí, sin perder nada.');
   }
 }
 
 async function postar(payload){
   try{
-    // Content-Type text/plain evita el preflight CORS que Apps Script no responde.
-    const r = await fetch(API, {
-      method: 'POST',
-      headers: {'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify(payload)
-    });
-    const j = await r.json();
-    if(j.ok) return {ok:true};
-    return {ok:false, error: j.error || 'respuesta inválida'};
+    const j = await rpc('ol_guardar', {p: payload});
+    if(j && j.ok) return {ok:true, reemplazo: !!j.reemplazo, duplicado: !!j.duplicado};
+    return Object.assign({ok:false}, j || {}, {error: (j && j.error) || 'respuesta inválida'});
   }catch(e){
-    return {ok:false, error: e.message || 'sin conexión'};
+    return {ok:false, red: !!e.red, error: e.message || 'sin conexión'};
   }
 }
 
 function encolar(p){
-  const q = JSON.parse(localStorage.getItem('lives_cola') || '[]');
+  const q = lsJson(K_COLA, []);
   if(!q.find(x => x.id === p.id)) q.push(p);
-  localStorage.setItem('lives_cola', JSON.stringify(q));
+  lsSet(K_COLA, JSON.stringify(q));
+  verPendientes();
 }
 async function reintentar(){
-  let q = JSON.parse(localStorage.getItem('lives_cola') || '[]');
+  let q = lsJson(K_COLA, []);
   if(!q.length) return msg('No hay envíos pendientes.', 'ok');
   $('btnPend').disabled = true; $('btnPend').textContent = 'Enviando…';
-  const quedan = [];
+  const quedan = [], errores = [];
+  let enviados = 0;
   for(const p of q){
-    const r = await postar(p);
-    if(!r.ok) quedan.push(p);
+    let r = await postar(p);
+    if(!r.ok && r.codigo === 'ya_existe'){
+      const si = confirm('El check list pendiente del ' + fechaTxt(p.fecha) + ' en ' + p.sede +
+        ' ya existe en el sistema (' + r.auditor + ', ' + r.envio + ').\n\n' +
+        'Aceptar: reemplazarlo con el del celular.\nCancelar: descartar el del celular.');
+      if(si){ p.reemplazar = true; r = await postar(p); }
+      else { continue; }
+    }
+    if(r.ok){ enviados++; }
+    else if(r.red){ quedan.push(p); }
+    else { errores.push(fechaTxt(p.fecha) + ' ' + p.sede + ': ' + r.error); quedan.push(p); }
   }
-  localStorage.setItem('lives_cola', JSON.stringify(quedan));
+  lsSet(K_COLA, JSON.stringify(quedan));
   $('btnPend').disabled = false;
   verPendientes();
-  msg(quedan.length ? 'Quedan ' + quedan.length + ' pendientes. Revisa la señal.' : 'Todos los pendientes se enviaron.', quedan.length ? 'warn' : 'ok');
+  if(errores.length) msg('Algunos pendientes no se pudieron guardar:<br>' + errores.map(esc).join('<br>'), 'err');
+  else msg(quedan.length ? 'Quedan ' + quedan.length + ' pendientes. Revisa la señal.' : 'Listo: ' + enviados + ' pendiente(s) enviados.', quedan.length ? 'warn' : 'ok');
 }
 function verPendientes(){
-  const q = JSON.parse(localStorage.getItem('lives_cola') || '[]');
+  const q = lsJson(K_COLA, []);
   const b = $('btnPend');
   if(q.length){ b.style.display = 'block'; b.textContent = 'Reintentar ' + q.length + ' envío(s) pendiente(s)'; }
   else { b.style.display = 'none'; }
 }
 
-function mostrarResumen(payload, p, pendiente){
+function mostrarResumen(payload, p, reemplazo){
   let ok=0, x=0, na=0;
   payload.respuestas.forEach(r => { if(r.res==='OK') ok++; else if(r.res==='X') x++; else na++; });
   const base = ok + x;
   $('resumen').innerHTML =
+    '<div><b>Código:</b> ' + esc(payload.id) + (reemplazo ? ' · <b style="color:#B45309">reemplazó al anterior</b>' : '') + '</div>' +
     '<div><b>Fecha:</b> ' + p.diaSemana + ' ' + p.dia + '/' + String(p.mes).padStart(2,'0') + '/' + p.anio + '</div>' +
     '<div><b>Semana:</b> ' + p.semana + ' (' + p.semanaEtq + ') · <b>Mes:</b> ' + p.mesNombre + '</div>' +
-    '<div><b>Sede:</b> ' + payload.sede + ' · <b>Auditor:</b> ' + esc(payload.auditor) + '</div>' +
+    '<div><b>Sede:</b> ' + esc(payload.sede) + ' · <b>Auditor:</b> ' + esc(payload.auditor) + '</div>' +
     '<div style="margin-top:8px"><b>Cumplimiento:</b> <span style="color:var(--sage);font-weight:700;font-size:17px">' +
       (base ? (ok*100/base).toFixed(1) + '%' : '—') + '</span></div>' +
     '<div>OK: ' + ok + ' · No conformidades: <b style="color:var(--rose)">' + x + '</b> · N/A: ' + na + '</div>';
@@ -514,13 +647,12 @@ function mostrarResumen(payload, p, pendiente){
 
 /* ---------- Init ---------- */
 $('fecha').value = hoyISO();
+$('fecha').max = hoyISO();
 pintarFecha();
-$('fecha').addEventListener('change', () => { pintarFecha(); guardarBorrador(); });
-$('auditor').value = localStorage.getItem('lives_auditor') || '';
+$('fecha').addEventListener('change', () => { pintarFecha(); });
 $('btnIniciar').onclick = iniciar;
 $('btnEnviar').onclick = enviar;
 $('btnPend').onclick = reintentar;
-function borrarBorrador(){ localStorage.removeItem('lives_borrador'); }
 
 /* Vacía las marcas pero deja el check list abierto para volver a llenarlo. */
 $('btnLimpiar').onclick = () => {
@@ -528,7 +660,7 @@ $('btnLimpiar').onclick = () => {
   if(!hechas) return msg('No hay ninguna marca que quitar.', 'ok');
   if(!confirm('Se van a quitar las ' + hechas + ' marcas de este check list.\n\n¿Continuar?')) return;
   RESP = {};
-  borrarBorrador();
+  guardarBorrador();
   renderSecciones();
   actualizarProgreso();
   msg('Check list vaciado. Puedes empezar de nuevo.', 'ok');
@@ -538,7 +670,7 @@ $('btnLimpiar').onclick = () => {
 /* Descarta todo y vuelve al inicio: es la salida para las pruebas. */
 $('btnDescartar').onclick = () => {
   if(!confirm('Se va a descartar este check list sin enviarlo y no quedará guardado en ningún lado.\n\n¿Continuar?')) return;
-  RESP = {};
+  RESP = {}; REEMPLAZAR = false;
   borrarBorrador();
   $('paso2').classList.add('hide'); $('foot').classList.add('hide');
   $('paso1').classList.remove('hide');
@@ -551,13 +683,10 @@ $('btnVolver').onclick = () => {
   $('paso1').classList.remove('hide'); window.scrollTo(0,0);
 };
 $('btnNueva').onclick = () => {
-  RESP = {}; $('paso3').classList.add('hide'); $('paso1').classList.remove('hide');
+  RESP = {}; REEMPLAZAR = false; $('paso3').classList.add('hide'); $('paso1').classList.remove('hide');
   $('fecha').value = hoyISO(); pintarFecha(); verPendientes(); window.scrollTo(0,0);
 };
 verPendientes();
-if(API.indexOf('PEGA_AQUI') === 0){
-  msg('Falta configurar la URL del Apps Script en la constante <b>API</b> de este archivo.', 'err');
-}
 cargarCatalogo();
 
 /* Aviso si hay un borrador sin enviar de otra sesión */
@@ -565,14 +694,14 @@ cargarCatalogo();
   const b = leerBorrador();
   if(b && b.resp && Object.keys(b.resp).length){
     const n = Object.keys(b.resp).length;
-    msg('Tienes un check list a medias del ' + b.fecha + ' (' + b.sede + ') con ' + n + ' marca(s). ' +
+    msg('Tienes un check list a medias del ' + esc(fechaTxt(b.fecha)) + ' (' + esc(b.sede) + ') con ' + n + ' marca(s). ' +
         'Pon la misma fecha y sede y toca "Iniciar" para retomarlo.' +
         '<div style="margin-top:10px"><button type="button" id="btnTirar" style="background:#fff;border:1.5px solid #B45309;' +
         'color:#B45309;font-family:inherit;font-size:12.5px;font-weight:700;border-radius:6px;padding:8px 14px;cursor:pointer">' +
         'Descartar ese borrador</button></div>', 'warn');
     const bt = document.getElementById('btnTirar');
     if(bt) bt.onclick = () => {
-      if(!confirm('Se va a borrar el check list a medias del ' + b.fecha + '.\n\n¿Continuar?')) return;
+      if(!confirm('Se va a borrar el check list a medias del ' + fechaTxt(b.fecha) + '.\n\n¿Continuar?')) return;
       borrarBorrador();
       RESP = {};
       msg('Borrador descartado.', 'ok');
@@ -580,5 +709,6 @@ cargarCatalogo();
   }
 })();
 </script>
+
 </body>
 </html>
